@@ -61,7 +61,7 @@ Note: You can check the application in Twitch by going to your Settings -> Conne
 
 1. Hit "Ctrl + Windows key" -> "Command Prompt"
 2. Change directory to where you downloaded the code
-3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.twitch_auth -c env.cfg -u me`
+3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.main -c env.cfg -u me`
 4. You should see "Running in channels: {channels you listed}", then "Starting bot..." and then "{your username} is online!". If you see these, congrats, the bot is ready to go!
 5. When you're finished, close the window you created in this section.
 
