@@ -3,7 +3,7 @@ from mountaineer_bot import windows_auth, core
 def main(config, user):
     configs = windows_auth.get_password(windows_auth.read_config(config))
     bot = core.create_bot(config=configs, user=user)
-    print(configs['CHANNELS'])
+    print('Running in channels: {}'.format(', '.join(configs['CHANNELS'])))
     print('Starting bot...')
     bot.run()
 

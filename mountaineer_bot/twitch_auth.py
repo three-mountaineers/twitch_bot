@@ -65,7 +65,7 @@ def main(config) -> Flask:
         windows_auth.set_refresh_token(configs, user, result['refresh_token'])
         return 'Successfully authorized using code flow.'
     
-    app.run(port=configs['PORT'], debug=True)       
+    app.run(port=configs['PORT'], debug=False)       
 
 def refresh_access_token(config, user):
     refresh_token = windows_auth.get_refresh_token(config, user)
