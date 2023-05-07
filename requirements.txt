@@ -1,0 +1,4 @@
+twitchio==2.6.0
+twitchAPI==3.10.0
+keyring==23.13.1
+requests==2.30.0
