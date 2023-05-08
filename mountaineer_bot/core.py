@@ -60,23 +60,26 @@ class Bot(commands.Bot):
                 await ctx.send(invalid_command_message)
         else:
             if isinstance(self._cd, asyncio.Task):
-                await ctx.send('Countdown cancelled.')
+                await ctx.send('Countdown replaced!')
                 self._cd.cancel()
                 self._cd = None
+            else:
+                await ctx.send(f'Countdown started!')
             self._cd = asyncio.create_task(self.countdown_helper(ctx, int(content[1])))
-            await ctx.send(f'Countdown started!')
     
     async def countdown_helper(self, ctx: commands.Context, duration):
+        t = time.time()
+        await asyncio.sleep(1.1)
         start_time = time.time()
         end_time = start_time + duration
         last = ''
         while True:
             time_now = time.time()
-            total_dt = int(math.ceil(end_time - time_now))
+            total_dt = end_time - time_now
 
             if total_dt <= 5:
-                dt = 1
                 mod = 1
+                dt = (total_dt % 1)
             elif total_dt <= 30:
                 mod = 5
                 dt = min([total_dt-5, mod])
@@ -89,8 +92,10 @@ class Bot(commands.Bot):
             elif total_dt <= 10*60:
                 mod = 60
                 dt = min([total_dt-2*60, mod])
-            dt = float(dt)/2
-
+                
+            if dt == 0: #Edge case where the same message will get repeated. Take minimum possible dt to get out of sync
+                dt = (total_dt % 1)
+                
             mod_dt = int(math.ceil(total_dt/mod)*mod)
             if total_dt <= 0:
                 message = 'Go!'
@@ -102,12 +107,17 @@ class Bot(commands.Bot):
                     if len(s) == 1:
                         s = '0'+s
                     message = str(math.floor(mod_dt/60)) + ':' + s + '...'
-            
+            t_now = time.time()
+            last_dt = t_now - t
+            dt = max([1.05-last_dt, dt, 0]) #Make sure the next dt always gives about 1.05s between messages and is not negative
             if message != last:
                 last = message
                 message = '{}'.format(message)
                 await ctx.send(message)
-
+                t = t_now
+                if (total_dt - dt) < 5:
+                    end_time += 0.05
+                    
             if total_dt <= 0:
                 break
 
