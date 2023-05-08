@@ -73,31 +73,46 @@ class Bot(commands.Bot):
         while True:
             time_now = time.time()
             total_dt = int(math.ceil(end_time - time_now))
+
+            if total_dt <= 5:
+                dt = 1
+                mod = 1
+            elif total_dt <= 30:
+                mod = 5
+                dt = min([total_dt-5, mod])
+            elif total_dt <= 60:
+                mod = 10
+                dt = min([total_dt-30, mod])
+            elif total_dt <= 2*60:
+                mod = 30
+                dt = min([total_dt-60, mod])
+            elif total_dt <= 10*60:
+                mod = 60
+                dt = min([total_dt-2*60, mod])
+            dt = float(dt)/2
+
+            mod_dt = int(math.ceil(total_dt/mod)*mod)
             if total_dt <= 0:
                 message = 'Go!'
             else:
-                if total_dt <= 60:
-                    message = str(total_dt) + '...'
-                elif total_dt <= 60*5:
-                    s = str(total_dt % 60)
+                if mod_dt <= 60:
+                    message = str(mod_dt) + '...'
+                elif mod_dt <= 60*5:
+                    s = str(mod_dt % 60)
                     if len(s) == 1:
                         s = '0'+s
-                    message = str(math.floor(total_dt/60)) + ':' + s + '...'
+                    message = str(math.floor(mod_dt/60)) + ':' + s + '...'
+            print(total_dt)
+            
             if message != last:
-                await ctx.send('{}'.format(message))
                 last = message
+                message = '{}'.format(message)
+                print(message)
+                await ctx.send(message)
+
             if total_dt <= 0:
                 break
-            if total_dt <= 5:
-                dt = 1
-            elif total_dt <= 30:
-                dt = min([total_dt-5, 5])
-            elif total_dt <= 60:
-                dt = min([total_dt-30, 10])
-            elif total_dt <= 2*60:
-                dt = min([total_dt-60, 30])
-            elif total_dt <= 10*60:
-                dt = min([total_dt-2*60, 60])
+
             await asyncio.sleep(dt)
         self._cd = None
 
