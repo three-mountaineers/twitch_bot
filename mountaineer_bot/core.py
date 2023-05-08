@@ -83,7 +83,7 @@ class Bot(commands.Bot):
             elif total_dt <= 60:
                 mod = 10
                 dt = min([total_dt-30, mod])
-            elif total_dt <= 2*60:
+            elif total_dt <= 5*60:
                 mod = 30
                 dt = min([total_dt-60, mod])
             elif total_dt <= 10*60:
