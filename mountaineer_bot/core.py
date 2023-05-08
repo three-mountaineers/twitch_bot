@@ -102,12 +102,10 @@ class Bot(commands.Bot):
                     if len(s) == 1:
                         s = '0'+s
                     message = str(math.floor(mod_dt/60)) + ':' + s + '...'
-            print(total_dt)
             
             if message != last:
                 last = message
                 message = '{}'.format(message)
-                print(message)
                 await ctx.send(message)
 
             if total_dt <= 0:
