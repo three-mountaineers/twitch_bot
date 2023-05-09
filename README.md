@@ -77,3 +77,7 @@ Keen eyed readers will see that in 4.4, the end of the URL has "me", and in 5.3 
 * !hello: The bot will say hi to whoever typed it
 * !cd {duration in seconds}: Will start a countdown. If someone else types it then it will replace any existing countdowns
 * !cd cancel: Will cancel a running countdown
+
+## Acknowledgement
+
+I wrote this code from scratch. While I'll happy to share this code, please acknowledge my contribution by linking to twitch.tv/three_mountaineers
