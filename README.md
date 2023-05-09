@@ -80,4 +80,4 @@ Keen eyed readers will see that in 4.4, the end of the URL has "me", and in 5.3 
 
 ## Acknowledgement
 
-I wrote this code from scratch. While I'll happy to share this code, please acknowledge my contribution by linking to twitch.tv/three_mountaineers
+I wrote this code from scratch. While I'll happy to share this code, please acknowledge my contribution by linking to [twitch.tv/three_mountaineers](https://www.twitch.tv/three_mountaineers)
