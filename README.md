@@ -6,7 +6,7 @@ This is to set up all of the codes the bot needs.
 
 1. Download python: https://www.python.org/downloads/release/python-31011/
 2. Clone/Download this code
-3. Hit "Ctrl + Windows key" -> "Command Prompt"
+3. Hit "Windows key" + "Q" -> "Command Prompt"
 4. Change directory to where you downloaded the code
 5. Type the following into the "Command Prompt" window: `pip install -r requirements.txt`
 
@@ -42,7 +42,7 @@ We are going to populate the information the bot needs to talk Twitch now in the
 
 ## Section 4: Let the chatbot act as you (or another account)
 
-1. Hit "Ctrl + Windows key" -> "Command Prompt"
+1. Hit "Windows" + "Q" key -> "Command Prompt"
 2. Change directory to where you downloaded the code
 3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.twitch_auth -c env.cfg`. You should see the first line to pop up is `* Serving Flask app 'twitch_auth'`
 4. Open your browser and go to `http://localhost:3000/login/me`
@@ -59,7 +59,7 @@ Note: You can check the application in Twitch by going to your Settings -> Conne
 
 ## Section 5: Start the chatbot
 
-1. Hit "Ctrl + Windows key" -> "Command Prompt"
+1. Hit "Windows+ "Q" key -> "Command Prompt"
 2. Change directory to where you downloaded the code
 3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.main -c env.cfg -u me`
 4. You should see "Running in channels: {channels you listed}", then "Starting bot..." and then "{your username} is online!". If you see these, congrats, the bot is ready to go!
