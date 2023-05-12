@@ -326,7 +326,7 @@ class LevelAdderMixin:
         await ctx.send(self.ck(message))
 
     @commands.command()
-    async def remove(self, ctx: commands.Context):
+    async def leave(self, ctx: commands.Context):
         user = ctx.author.name
         channel = ctx.channel.name
         submitted_users = [x['user'] for x in self._queue[channel]]
