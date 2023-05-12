@@ -6,6 +6,8 @@ def read_config(cfg_location):
     config.read(cfg_location)
     config = {k.upper():v for k,v in config['TWITCH_BOT'].items()}
     config['CHANNELS'] = config['CHANNELS'].split()
+    if 'WHITE_LIST_USERS' in config.keys():
+        config['WHITE_LIST_USERS'] = config['WHITE_LIST_USERS'].split()
     return config
 
 def get_password(config):
