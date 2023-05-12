@@ -33,7 +33,7 @@ class Bot(commands.Bot):
             )
         self._http._refresh_token = refresh_token
         self._configs = configs
-        self._cd: Optional[routines.Routine] = None
+        self._cd: Optional[routines.Routine] = {channel:{} for channel in initial_channels}
 
     async def event_ready(self):
         print(f"{self._configs['BOT_NICK']} is online!")
@@ -50,69 +50,95 @@ class Bot(commands.Bot):
     async def cd(self, ctx: commands.Context):
         invalid_command_message = 'Invalid command for !cd'
         content = ctx.message.content.split(' ')
-        if content[0] != '!cd':
+        channel = ctx.channel.name
+        if content[0] != '{}cd'.format(self._prefix):
             return
         elif not content[1].isnumeric():
-            if content[1] == 'stop':
-                message = self.stop_countdown()
+            if len(content) == 2:
+                key = None
+            else:
+                key = content[2]
+            if content[1].lower() in ['stop','wait']:
+                message = self.stop_countdown(channel, key=key)
                 await ctx.send(message)
             else:
                 await ctx.send(invalid_command_message)
         else:
-            if isinstance(self._cd, asyncio.Task):
-                await ctx.send('Countdown replaced!')
-                self._cd.cancel()
-                self._cd = None
+            dt = int(content[1])
+            if len(content) == 2:
+                key = None
             else:
-                await ctx.send(f'Countdown started!')
-            self._cd = asyncio.create_task(self.countdown_helper(ctx, int(content[1])))
+                key = content[2]
+            if self.has_cd(channel, key):
+                await ctx.send(self.stop_countdown(channel, key=key, new_dt=dt))
+            else:
+                await ctx.send('Countdown started! {}'.format(self.format_time_remain(dt, key)))
+            self._cd[channel]['_base' if key is None else key] = asyncio.create_task(
+                self.countdown_helper(
+                    ctx, 
+                    dt,
+                    key=key,
+                    )
+            )
     
-    async def countdown_helper(self, ctx: commands.Context, duration):
-        t = time.time()
+    def has_cd(self, channel, key):
+        key = '_base' if key is None else key
+        if key not in self._cd[channel]:
+            output = False
+        elif isinstance(self._cd[channel][key], asyncio.Task):
+            output = True
+        else:
+            output = False
+        return output
+
+    def format_time_remain(self, mod_dt, key=None):
+        if mod_dt <= 0:
+            message = 'Go!'
+        else:
+            if mod_dt <= 60:
+                message = str(mod_dt) + '...'
+            elif mod_dt <= 60*5:
+                s = str(mod_dt % 60)
+                if len(s) == 1:
+                    s = '0'+s
+                message = str(math.floor(mod_dt/60)) + ':' + s + '...'
+        if key is not None:
+            message = key + ': ' + message
+        return message
+    
+    async def countdown_helper(self, ctx: commands.Context, duration, key=None):
         await asyncio.sleep(1.1)
         start_time = time.time()
         end_time = start_time + duration
-        last = ''
+        last = self.format_time_remain(math.ceil(end_time - start_time), key=key)
+        t = start_time
         while True:
             time_now = time.time()
             total_dt = end_time - time_now
 
             if total_dt <= 5:
                 mod = 1
-                dt = (total_dt % 1)
             elif total_dt <= 30:
                 mod = 5
-                dt = min([total_dt-5, mod])
             elif total_dt <= 60:
                 mod = 10
-                dt = min([total_dt-30, mod])
             elif total_dt <= 5*60:
                 mod = 30
-                dt = min([total_dt-60, mod])
             elif total_dt <= 10*60:
                 mod = 60
-                dt = min([total_dt-2*60, mod])
-                
-            if dt == 0: #Edge case where the same message will get repeated. Take minimum possible dt to get out of sync
-                dt = (total_dt % 1)
+            dt = total_dt % mod
                 
             mod_dt = int(math.ceil(total_dt/mod)*mod)
-            if total_dt <= 0:
-                message = 'Go!'
-            else:
-                if mod_dt <= 60:
-                    message = str(mod_dt) + '...'
-                elif mod_dt <= 60*5:
-                    s = str(mod_dt % 60)
-                    if len(s) == 1:
-                        s = '0'+s
-                    message = str(math.floor(mod_dt/60)) + ':' + s + '...'
+            int_dt = math.ceil(total_dt)
+            message = self.format_time_remain(mod_dt, key=key)
             t_now = time.time()
             last_dt = t_now - t
             dt = max([1.05-last_dt, dt, 0]) #Make sure the next dt always gives about 1.05s between messages and is not negative
-            if message != last:
+
+            if message != last and mod_dt==int_dt:
                 last = message
                 message = '{}'.format(message)
+                #print('Print {}'.format(message))
                 await ctx.send(message)
                 t = t_now
                 if (total_dt - dt) < 5:
@@ -122,18 +148,22 @@ class Bot(commands.Bot):
                 break
 
             await asyncio.sleep(dt)
-        self._cd = None
 
-    def stop_countdown(self):
-        if (not hasattr(self, '_cd')) or self._cd is None:
-            message = 'No countdown is active.'
-        elif isinstance(self._cd, asyncio.Task):
-            message = 'Countdown has been cancelled.'
-            self._cd.cancel()
-            self._cd = None
+        key = '_base' if key is None else key
+        self._cd[ctx.channel.name][key] = None
+
+    def stop_countdown(self, channel, key=None, new_dt=None):
+        key = '_base' if key is None else key
+        if isinstance(self._cd[channel][key], asyncio.Task):
+            if new_dt:
+                message = 'Countdown replaced! {}'.format(self.format_time_remain(new_dt, key))
+            else:
+                message = 'Countdown has been cancelled.'
+            self._cd[channel][key].cancel()
+            self._cd[channel][key] = None
         else:
             message = 'Some weird stuff happened: countdown reset.'
-            self._cd = None
+            self._cd[channel][key] = None
         return message
 
 def create_bot(config, user):
