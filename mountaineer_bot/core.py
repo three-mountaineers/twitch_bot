@@ -74,6 +74,7 @@ class CountdownMixin:
                 key = content[2]
             if self.has_cd(channel, key):
                 await ctx.send(self.ck("I'm already counting down!"))
+                return
             else:
                 await ctx.send(self.ck('Countdown starting...'))
             self._cd[channel]['_base' if key is None else key] = asyncio.create_task(
