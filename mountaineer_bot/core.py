@@ -64,7 +64,7 @@ class CountdownMixin:
             else:
                 if self._invalid_response is not None:
                     await ctx.send(self.ck(self._invalid_response))
-        elif dt < 0:
+        elif dt <= 0:
             if self._invalid_response is not None:
                 await ctx.send(self.ck(self._invalid_response))
         else:
@@ -123,19 +123,19 @@ class CountdownMixin:
             message = self.format_time_remain(int_dt, key=key)
             await ctx.send(self.ck(message))
             #print(message)
-            if total_dt <= 0:
+            if message == self.self.format_time_remain(0):
                 break
 
             # Work out the next time
-            if total_dt <= 5:
+            if round(total_dt) <= 5:
                 mod = 1
-            elif total_dt <= 30:
+            elif round(total_dt) <= 30:
                 mod = 5
-            elif total_dt <= 60:
+            elif round(total_dt) <= 60:
                 mod = 10
-            elif total_dt <= 5*60:
+            elif round(total_dt) <= 5*60:
                 mod = 30
-            elif total_dt <= 10*60:
+            elif round(total_dt) <= 10*60:
                 mod = 60
             dt = total_dt % mod
 
@@ -321,7 +321,7 @@ class LevelAdderMixin:
     @commands.command()
     async def queue(self, ctx: commands.Context):
         users = [x['user'] for x in self._queue[ctx.channel.name]]
-        message = 'In line :'+','.join([x['user'] for x in self._queue[ctx.channel.name]])
+        message = str(len(self._queue[ctx.channel.name])) + ' in queue : '+', '.join([x['user'] for x in self._queue[ctx.channel.name]])
         if len(users) == 0:
             message = "The queue is empty."
         await ctx.send(self.ck(message))
