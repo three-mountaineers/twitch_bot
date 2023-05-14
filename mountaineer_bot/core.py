@@ -123,7 +123,7 @@ class CountdownMixin:
             message = self.format_time_remain(int_dt, key=key)
             await ctx.send(self.ck(message))
             #print(message)
-            if message == self.self.format_time_remain(0):
+            if message == self.format_time_remain(0):
                 break
 
             # Work out the next time
@@ -170,14 +170,34 @@ class CountdownMixin:
 class LevelAdderMixin:
     def __init__(self, level_code_pattern:str, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._queue: Dict[str, List[Dict[str, str]]] = {channel:[] for channel in kwargs['initial_channels']}
-        self._current: Dict[str, Optional[Dict[str, str]]] = {
-            channel:None for channel in kwargs['initial_channels']}
+        self._queue: Dict[str, Dict[str, Union[None, Dict[str, str], List[Dict[str, str]]]]] = {channel:[] for channel in kwargs['initial_channels']}
+        self._queue_status: Dict[str, bool] = {channel:False for channel in kwargs['initial_channels']}
         self._level_code_pattern = level_code_pattern
         self._level_history_file = 'level_history.json'
-        if not os.path.isdir(self._level_history_file):
+        self._queue_not_open_message = 'The queue is not open.'
+        if not os.path.isfile(self._level_history_file):
             with open(self._level_history_file,'w') as f:
-                json.dump({}, f)
+                json.dump(
+                    {
+                        x:{
+                            'queue':[],
+                            'current':None, 
+                            'complete':{},
+                            }
+                        for x in kwargs['initial_channels']}
+                    , f)
+        with open(self._level_history_file,'r') as f:
+            memory = json.load(f)
+            # This is for backward compatibility
+            key = list(memory.keys())[0]
+            if isinstance(memory[key], str):
+                memory = {x:{'current':None, 'queue':[], 'complete':memory} for x in kwargs['initial_channels']}
+        self._queue = memory
+        self.save_queue()
+
+    def save_queue(self):
+        with open(self._level_history_file,'w') as f:
+            json.dump(self._queue, f)
 
     def validate_level_pattern(self, new_code):
         if len(re.findall(self._level_code_pattern.replace('X','[0-9]'), new_code)) > 0:
@@ -185,17 +205,41 @@ class LevelAdderMixin:
         else:
             return False
 
-    def check_played(self, new_code):
-        with open(self._level_history_file,'r') as f:
-            history = json.load(f)
-        return history.get(new_code)
+    def check_played(self, channel, new_code):
+        if new_code in self._queue[channel]['complete'].keys():
+            message = "I've played this level already."
+        elif self._queue[channel]['current'] is not None and new_code in self._queue[channel]['current']['code']:
+            message = "I'm playing this level now."
+        elif new_code in [x['code'] for x in self._queue[channel]['queue']]:
+            message = "The level is already in the queue."
+        else:
+            message = None
+        return message
         
-    def add_played(self, new_code):
-        with open(self._level_history_file,'r') as f:
-            history = json.load(f)
-        history[new_code] = datetime.date.today().strftime('%Y-%m-%d')
-        with open(self._level_history_file,'w') as f:
-            json.dump(history, f)
+    def add_played(self, channel, new_code):
+        self._queue[channel]['complete'][new_code] = datetime.date.today().strftime('%Y-%m-%d')
+
+    @commands.command()
+    async def open(self, ctx: commands.Context):
+        allowed = False
+        allowed = allow_broadcaster(self, ctx, allowed)
+        if not allowed:
+            message = self._no_permission_response
+        else:
+            message = self._queue_status[ctx.channel.name] = True
+            message = 'The queue is now open'
+        await ctx.send(message)
+
+    @commands.command()
+    async def close(self, ctx: commands.Context):
+        allowed = False
+        allowed = allow_broadcaster(self, ctx, allowed)
+        if not allowed:
+            message = self._no_permission_response
+        else:
+            message = self._queue_status[ctx.channel.name] = False
+            message = 'The queue is now closed'
+        await ctx.send(message)
 
     @commands.command()
     async def add(self, ctx: commands.Context):
@@ -203,24 +247,25 @@ class LevelAdderMixin:
         channel = ctx.channel.name
         user = ctx.author.name
 
-        if len(content) != 2:
+        if self._queue_status[channel] is False:
+            message = self._queue_not_open_message
+        elif len(content) != 2:
             message = self._invalid_response
         else:
             level_code = content[1]
-            if user in [x['user'] for x in self._queue[channel]]:
+            if user in [x['user'] for x in self._queue[channel]['queue']]:
                 message = f'You already have a level {user}. Use !replace first to replace your level.'
             else:
                 if self.validate_level_pattern(level_code):
-                    when_played = self.check_played(level_code)
-                    if when_played is not None:
-                        message = "We've played this already!"
-                    else:
-                        self._queue[channel].append({'user':user, 'code':level_code, 'sub':ctx.author.is_subscriber})
+                    message = self.check_played(channel, level_code)
+                    if message is None:
+                        self._queue[channel]['queue'].append({'user':user, 'code':level_code, 'sub':ctx.author.is_subscriber})
                         message = f'Your level has been added {user}'
                 else:
                     message = f'Invalid level code: level codes need to look like {self._level_code_pattern}'
 
         await ctx.send(self.ck(message))
+        self.save_queue()
 
     @commands.command()
     async def replace(self, ctx: commands.Context):
@@ -228,23 +273,28 @@ class LevelAdderMixin:
         channel = ctx.channel.name
         user = ctx.author.name
 
-        if len(content) != 2:
+        if not self._queue_status[channel]:
+            message = self._queue_not_open_message
+        elif len(content) != 2:
             message = self._invalid_response
         else:
             level_code = content[1]
-            if self.validate_level_pattern(level_code):
-                level = {'user':user, 'code':level_code}
-                submitted_users = [x['user'] for x in self._queue[channel]]
-                if user in submitted_users:
-                    idx = submitted_users.index(user)
-                    self._queue[channel][idx] = level
-                    message = f'Your level has been replaced {user}'
+            message = self.check_played(channel, level_code)
+            if message is None:
+                if self.validate_level_pattern(level_code):
+                    level = {'user':user, 'code':level_code}
+                    submitted_users = [x['user'] for x in self._queue[channel]['queue']]
+                    if user in submitted_users:
+                        idx = submitted_users.index(user)
+                        self._queue[channel]['queue'][idx] = level
+                        message = f'Your level has been replaced {user}'
+                    else:
+                        self._queue[channel]['queue'].append(level)
+                        message = f'Your level has been added {user}'
                 else:
-                    self._queue[channel].append(level)
-                    message = f'Your level has been added {user}'
-            else:
-                message = f'Invalid level code: level codes need to look like {self._level_code_pattern}'
+                    message = f'Invalid level code: level codes need to look like {self._level_code_pattern}'
         await ctx.send(self.ck(message))
+        self.save_queue()
 
     @commands.command()
     async def keet(self, ctx: commands.Context):
@@ -258,6 +308,7 @@ class LevelAdderMixin:
             content.append(None)
         message = self._select_from_queue(ctx, store=False, which=content[1])
         await ctx.send(self.ck(message))
+        self.save_queue()
 
     @commands.command()
     async def next(self, ctx: commands.Context):
@@ -271,58 +322,63 @@ class LevelAdderMixin:
             content.append(None)
         message = self._select_from_queue(ctx, store=True, which=content[1])
         await ctx.send(self.ck(message))
+        self.save_queue()
 
     def _select_from_queue(self, ctx: commands.Context, store:bool, which=None):
         channel = ctx.channel.name
-        if self._current[channel] is not None and store:
-            self.add_played(self._current[channel]['code'])
+        if self._queue[channel]['current'] is not None and store:
+            self.add_played(channel, self._queue[channel]['current']['code'])
         if len(self._queue[channel]) == 0:
-            self._current[channel] = None
+            self._queue[channel]['current'] = None
             return "There's nothing in the queue!"
         else:
             if which is None or which == 'next':
-                self._current[channel] = self._queue[channel][0]
-                self._queue[channel] = self._queue[channel][1:]
+                self._queue[channel]['current'] = self._queue[channel]['queue'][0]
+                self._queue[channel]['queue'] = self._queue[channel]['queue'][1:]
             elif which == 'subnext':
-                levels = [(ii, x) for ii,x in enumerate(self._queue[channel]) if x['sub']]
+                levels = [(ii, x) for ii,x in enumerate(self._queue[channel]['queue']) if x['sub']]
                 if len(levels) == 0:
                     return 'There are no sub levels in the queue.'
                 else:
                     idx = 0
-                    self._current[channel] = levels[idx][1]
-                    self._queue[channel].pop(levels[idx][0])
+                    self._queue[channel]['current'] = levels[idx][1]
+                    self._queue[channel]['queue'].pop(levels[idx][0])
             elif which == 'random':
                 idx = randrange(len(self._queue[channel]))
-                self._current[channel] = self._queue[channel][idx]
-                self._queue[channel].pop(idx)
+                self._queue[channel]['current'] = self._queue[channel]['queue'][idx]
+                self._queue[channel]['queue'].pop(idx)
             elif which == 'subrandom':
-                levels = [(ii, x) for ii,x in enumerate(self._queue[channel]) if x['sub']]
+                levels = [(ii, x) for ii,x in enumerate(self._queue[channel]['queue']) if x['sub']]
                 if len(levels) == 0:
                     return 'There are no sub levels in the queue'
                 else:
                     idx = randrange(levels)
-                    self._current[channel] = levels[idx][1]
-                    self._queue[channel].pop(levels[idx][0])
+                    self._queue[channel]['current'] = levels[idx][1]
+                    self._queue[channel]['queue'].pop(levels[idx][0])
             else:
                 return self._invalid_response
-            user = self._current[channel]['user']
-            level_code = self._current[channel]['code']
+            user = self._queue[channel]['current']['user']
+            level_code = self._queue[channel]['current']['code']
             return f'{user} your level is up! {level_code}'
 
     @commands.command()
     async def current(self, ctx: commands.Context):
-        if self._current[ctx.channel.name] is None:
+        if self._queue_status[ctx.channel.name] is False:
+            await ctx.send(self._queue_not_open_message)
+        elif self._queue[ctx.channel.name]['current'] is None:
             await ctx.send(self.ck("We're not currently playing a level"))
         else:
-            user = self._current[ctx.channel.name]['user']
-            level_code = self._current[ctx.channel.name]['code']
+            user = self._queue[ctx.channel.name]['current']['user']
+            level_code = self._queue[ctx.channel.name]['current']['code']
             await ctx.send(self.ck(f'Current level is {level_code} by {user}.'))
 
     @commands.command()
     async def queue(self, ctx: commands.Context):
-        users = [x['user'] for x in self._queue[ctx.channel.name]]
-        message = str(len(self._queue[ctx.channel.name])) + ' in queue : '+', '.join([x['user'] for x in self._queue[ctx.channel.name]])
-        if len(users) == 0:
+        users = [x['user'] for x in self._queue[ctx.channel.name]['queue']]
+        message = str(len(self._queue[ctx.channel.name]['queue'])) + ' level in queue : '+', '.join([x['user'] for x in self._queue[ctx.channel.name]['queue']])
+        if not self._queue_status[ctx.channel.name]:
+            message = self._queue_not_open_message
+        elif len(users) == 0:
             message = "The queue is empty."
         await ctx.send(self.ck(message))
 
@@ -330,14 +386,17 @@ class LevelAdderMixin:
     async def leave(self, ctx: commands.Context):
         user = ctx.author.name
         channel = ctx.channel.name
-        submitted_users = [x['user'] for x in self._queue[channel]]
-        if user in submitted_users:
+        submitted_users = [x['user'] for x in self._queue[channel]['queue']]
+        if not self._queue_status[channel]:
+            message = self._queue_not_open_message
+        elif user in submitted_users:
             idx = submitted_users.index(user)
-            self._queue[channel].pop(idx)
+            self._queue[channel]['queue'].pop(idx)
             message = f'Your level has been removed {user}'
         else:
             message = f"{user} you don't have a level to remove."
         await ctx.send(self.ck(message))
+        self.save_queue()
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
@@ -346,17 +405,21 @@ class LevelAdderMixin:
         if not allowed:
             await ctx.send(self.ck(self._no_permission_response))
             return
-        self._queue[ctx.channel.name] = []
+        self._queue[ctx.channel.name]['queue'] = []
+        self._queue[ctx.channel.name]['current'] = None
         await ctx.send(self.ck('Queue cleared'))
+        self.save_queue()
 
     @commands.command()
     async def check(self, ctx: commands.Context):
         user = ctx.author.name
         channel = ctx.channel.name
-        submitted_users = [x['user'] for x in self._queue[channel]]
-        if user in submitted_users:
+        submitted_users = [x['user'] for x in self._queue[channel]['queue']]
+        if not self._queue_status[channel]:
+            message = self._queue_not_open_message
+        elif user in submitted_users:
             idx = submitted_users.index(user)
-            level = self._queue[channel][idx]['code']
+            level = self._queue[channel]['queue'][idx]['code']
             idx = idx + 1
             message = f'{user}, you submitted {level}. You are number {idx} in the queue.'
         else:
