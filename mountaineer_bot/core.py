@@ -328,7 +328,7 @@ class LevelAdderMixin:
         channel = ctx.channel.name
         if self._queue[channel]['current'] is not None and store:
             self.add_played(channel, self._queue[channel]['current']['code'])
-        if len(self._queue[channel]) == 0:
+        if len(self._queue[channel]['queue']) == 0:
             self._queue[channel]['current'] = None
             return "There's nothing in the queue!"
         else:
