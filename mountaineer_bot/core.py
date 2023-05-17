@@ -330,7 +330,7 @@ class LevelAdderMixin:
             self.add_played(channel, self._queue[channel]['current']['code'])
         if len(self._queue[channel]['queue']) == 0:
             self._queue[channel]['current'] = None
-            return "There's nothing in the queue!"
+            return f"There's nothing in the queue! @{ctx.channel.name}"
         else:
             if which is None or which == 'next':
                 self._queue[channel]['current'] = self._queue[channel]['queue'][0]
@@ -338,7 +338,7 @@ class LevelAdderMixin:
             elif which == 'subnext':
                 levels = [(ii, x) for ii,x in enumerate(self._queue[channel]['queue']) if x['sub']]
                 if len(levels) == 0:
-                    return 'There are no sub levels in the queue.'
+                    return f'There are no sub levels in the queue. @{ctx.channel.name}'
                 else:
                     idx = 0
                     self._queue[channel]['current'] = levels[idx][1]
@@ -350,7 +350,7 @@ class LevelAdderMixin:
             elif which == 'subrandom':
                 levels = [(ii, x) for ii,x in enumerate(self._queue[channel]['queue']) if x['sub']]
                 if len(levels) == 0:
-                    return 'There are no sub levels in the queue'
+                    return f'There are no sub levels in the queue. @{ctx.channel.name}'
                 else:
                     idx = randrange(levels)
                     self._queue[channel]['current'] = levels[idx][1]
@@ -359,7 +359,7 @@ class LevelAdderMixin:
                 return self._invalid_response
             user = self._queue[channel]['current']['user']
             level_code = self._queue[channel]['current']['code']
-            return f'{user} your level is up! {level_code}'
+            return f'{user} your level is up! {level_code} @{ctx.channel.name}'
 
     @commands.command()
     async def current(self, ctx: commands.Context):
