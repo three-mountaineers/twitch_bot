@@ -363,24 +363,27 @@ class LevelAdderMixin:
 
     @commands.command()
     async def current(self, ctx: commands.Context):
-        if self._queue_status[ctx.channel.name] is False:
-            await ctx.send(self._queue_not_open_message)
-        elif self._queue[ctx.channel.name]['current'] is None:
-            await ctx.send(self.ck("We're not currently playing a level"))
+        if self._queue[ctx.channel.name]['current'] is None:
+            message = self.ck("We're not currently playing a level")
         else:
             user = self._queue[ctx.channel.name]['current']['user']
             level_code = self._queue[ctx.channel.name]['current']['code']
-            await ctx.send(self.ck(f'Current level is {level_code} by {user}.'))
+            message = self.ck(f'Current level is {level_code} by {user}.')
+        await ctx.send(message)
 
     @commands.command()
     async def queue(self, ctx: commands.Context):
         users = [x['user'] for x in self._queue[ctx.channel.name]['queue']]
         message = str(len(self._queue[ctx.channel.name]['queue'])) + ' level in queue : '+', '.join([x['user'] for x in self._queue[ctx.channel.name]['queue']])
-        if not self._queue_status[ctx.channel.name]:
-            message = self._queue_not_open_message
+        if not self._queue_status[ctx.channel.name] and len(users) == 0:
+            message = "The queue is empty and closed."
         elif len(users) == 0:
             message = "The queue is empty."
         await ctx.send(self.ck(message))
+
+    @commands.command()
+    async def list(self, ctx: commands.Context):
+        await self.queue(ctx)
 
     @commands.command()
     async def leave(self, ctx: commands.Context):
@@ -411,17 +414,21 @@ class LevelAdderMixin:
         self.save_queue()
 
     @commands.command()
+    async def position(self, ctx: commands.Context):
+        await self.check(ctx)
+
+    @commands.command()
     async def check(self, ctx: commands.Context):
         user = ctx.author.name
         channel = ctx.channel.name
         submitted_users = [x['user'] for x in self._queue[channel]['queue']]
-        if not self._queue_status[channel]:
-            message = self._queue_not_open_message
-        elif user in submitted_users:
+        if user in submitted_users:
             idx = submitted_users.index(user)
             level = self._queue[channel]['queue'][idx]['code']
             idx = idx + 1
             message = f'{user}, you submitted {level}. You are number {idx} in the queue.'
+        elif not self._queue_status[channel]:
+            message = self._queue_not_open_message
         else:
             message = f"{user} you don't have a level submitted."
         await ctx.send(self.ck(message))
