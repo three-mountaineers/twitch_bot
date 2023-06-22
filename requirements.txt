@@ -3,3 +3,4 @@ twitchAPI==3.10.0
 keyring==23.13.1
 requests==2.30.0
 flask==2.3.2
+pytz==2023.3
