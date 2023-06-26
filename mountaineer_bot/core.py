@@ -551,7 +551,7 @@ class SchedulerMixin:
         next_game_time = next_game_dt.time().strftime('%I:%M %p')
         time = current_time.time().strftime('%I:%M %p')
 
-        message = f"It is {dow}, {time}{tz_local}{game}. The next game is {next_game} {next_game_dow} at {next_game_time} || Check https://www.twitch.tv/{channel}/schedule or !schedule [your timezone/city] for local timings"
+        message = f"It is {dow}, {time}{tz_local}{game}. The next game is {next_game} {next_game_dow} at {next_game_time}"
         return message
     
     def _save_schedule(self):
@@ -631,11 +631,9 @@ class SchedulerMixin:
         if len(self._schedule[channel]) == 0:
             await ctx.send("There's nothing on the schedule!")
             return
-        item_list = []
         for item in self._schedule[channel]:
-            item_list.append(self._format_item_str(item))
-        await ctx.send(' | '.join(item_list))
-        time.sleep(1.1)
+            await ctx.send(self._format_item_str(item))
+            await asyncio.sleep(1.1)
         return
 
     @commands.command()
@@ -665,8 +663,10 @@ class SchedulerMixin:
                 if not allowed:
                     await ctx.send(self.ck(self._no_permission_response))
                     return
-                await self.list_schedule(ctx)
-                message = "That's all!"
+                asyncio.create_task(
+                    self.list_schedule(ctx)
+                )
+                return
             elif command == 'remove':
                 allowed = False
                 allowed = allow_broadcaster(self, ctx, allowed)
@@ -680,7 +680,8 @@ class SchedulerMixin:
                     message = self._remove_schedule(channel, *content[2:])
             else:
                 message = self._get_schedule(channel, tz_name=' '.join(content[1:]))
-        await ctx.send(message)
+        if message is not None:
+            await ctx.send(message)
 
 
 class Bot(commands.Bot):
