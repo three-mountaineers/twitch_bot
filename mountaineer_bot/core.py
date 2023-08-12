@@ -438,7 +438,7 @@ class SchedulerMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._schedule_file = 'schedule.json'
-        self.LIST_COOLDOWN_SECONDS = 20
+        self.LIST_COOLDOWN_SECONDS = 300
         if not os.path.isfile(self._schedule_file):
             with open(self._schedule_file,'w') as f:
                 json.dump(
@@ -626,7 +626,7 @@ class SchedulerMixin:
         return message
 
     def _format_item_str(self, item):
-        return f'{item[-1]} : {self._weekday_map[item[0]]} from {item[1]} to {item[2]}'
+        return f'{self._weekday_map[item[0]]} - {item[-1]} - {item[1]} to {item[2]}'
 
     async def list_schedule(self, ctx: commands.Context):
         channel = ctx.channel.name
