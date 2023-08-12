@@ -13,4 +13,10 @@ if __name__ == "__main__":
     parser.add_argument('-c','--config', type=str)
     parser.add_argument('-u','--user', type=str)
     args = vars(parser.parse_args())
-    bot = main(**args)
+    while 1:
+        try:
+            main(**args)
+        except KeyError as e:
+            print('Error encountered')
+            print('Rebooting...')
+            continue

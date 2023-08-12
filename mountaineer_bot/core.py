@@ -48,7 +48,7 @@ class CountdownMixin:
         allowed = allow_mods(self, ctx, allowed)
         allowed = allow_whitelist(self, ctx, allowed)
         if not allowed:
-            await ctx.send(self.ck(self._no_permission_response))
+            await self.send(ctx, self._no_permission_response)
             return
         content = ctx.message.content.strip(self._repeat_preventer).strip().split(' ')
         channel = ctx.channel.name
@@ -61,23 +61,23 @@ class CountdownMixin:
                 key = content[2]
             if content[1].lower() in ['stop','wait']:
                 message = self.stop_countdown(channel, key=key)
-                await ctx.send(self.ck(message))
+                await self.send(ctx, message)
             else:
                 if self._invalid_response is not None:
-                    await ctx.send(self.ck(self._invalid_response))
+                    await self.send(ctx, self._invalid_response)
         elif dt <= 0:
             if self._invalid_response is not None:
-                await ctx.send(self.ck(self._invalid_response))
+                await self.send(ctx, self._invalid_response)
         else:
             if len(content) == 2:
                 key = None
             else:
                 key = content[2]
             if self.has_cd(channel, key):
-                await ctx.send(self.ck("I'm already counting down!"))
+                await self.send(ctx, "I'm already counting down!")
                 return
             else:
-                await ctx.send(self.ck('Countdown starting...'))
+                await self.send(ctx, 'Countdown starting...')
             self._cd[channel]['_base' if key is None else key] = asyncio.create_task(
                 self.countdown_helper(
                     ctx, 
@@ -122,7 +122,7 @@ class CountdownMixin:
 
             # Print the time
             message = self.format_time_remain(int_dt, key=key)
-            await ctx.send(self.ck(message))
+            await self.send(ctx, message)
             #print(message)
             if message == self.format_time_remain(0):
                 break
@@ -229,7 +229,7 @@ class LevelAdderMixin:
         else:
             message = self._queue_status[ctx.channel.name] = True
             message = 'The queue is now open'
-        await ctx.send(message)
+        await self.send(ctx, message)
 
     @commands.command()
     async def close(self, ctx: commands.Context):
@@ -240,7 +240,7 @@ class LevelAdderMixin:
         else:
             message = self._queue_status[ctx.channel.name] = False
             message = 'The queue is now closed'
-        await ctx.send(message)
+        await self.send(ctx, message)
 
     @commands.command()
     async def add(self, ctx: commands.Context):
@@ -265,7 +265,7 @@ class LevelAdderMixin:
                 else:
                     message = f'Invalid level code: level codes need to look like {self._level_code_pattern}'
 
-        await ctx.send(self.ck(message))
+        await self.send(ctx, message)
         self.save_queue()
 
     @commands.command()
@@ -294,7 +294,7 @@ class LevelAdderMixin:
                         message = f'Your level has been added {user}'
                 else:
                     message = f'Invalid level code: level codes need to look like {self._level_code_pattern}'
-        await ctx.send(self.ck(message))
+        await self.send(ctx, message)
         self.save_queue()
 
     @commands.command()
@@ -302,13 +302,13 @@ class LevelAdderMixin:
         allowed = False
         allowed = allow_broadcaster(self, ctx, allowed)
         if not allowed:
-            await ctx.send(self.ck(self._no_permission_response))
+            await self.send(ctx, self._no_permission_response)
             return
         content = self.parse_content(ctx.message.content)
         if len(content) == 1:
             content.append(None)
         message = self._select_from_queue(ctx, store=False, which=content[1])
-        await ctx.send(self.ck(message))
+        await self.send(ctx, message)
         self.save_queue()
 
     @commands.command()
@@ -316,13 +316,13 @@ class LevelAdderMixin:
         allowed = False
         allowed = allow_broadcaster(self, ctx, allowed)
         if not allowed:
-            await ctx.send(self.ck(self._no_permission_response))
+            await self.send(ctx, self._no_permission_response)
             return
         content = self.parse_content(ctx.message.content)
         if len(content) == 1:
             content.append(None)
         message = self._select_from_queue(ctx, store=True, which=content[1])
-        await ctx.send(self.ck(message))
+        await self.send(ctx, message)
         self.save_queue()
 
     def _select_from_queue(self, ctx: commands.Context, store:bool, which=None):
@@ -365,12 +365,12 @@ class LevelAdderMixin:
     @commands.command()
     async def current(self, ctx: commands.Context):
         if self._queue[ctx.channel.name]['current'] is None:
-            message = self.ck("We're not currently playing a level")
+            message = "We're not currently playing a level"
         else:
             user = self._queue[ctx.channel.name]['current']['user']
             level_code = self._queue[ctx.channel.name]['current']['code']
-            message = self.ck(f'Current level is {level_code} by {user}.')
-        await ctx.send(message)
+            message = f'Current level is {level_code} by {user}.'
+        await self.send(ctx, message)
 
     @commands.command()
     async def queue(self, ctx: commands.Context):
@@ -380,7 +380,7 @@ class LevelAdderMixin:
             message = "The queue is empty and closed."
         elif len(users) == 0:
             message = "The queue is empty."
-        await ctx.send(self.ck(message))
+        await self.send(ctx, message)
 
     @commands.command()
     async def list(self, ctx: commands.Context):
@@ -399,7 +399,7 @@ class LevelAdderMixin:
             message = f'Your level has been removed {user}'
         else:
             message = f"{user} you don't have a level to remove."
-        await ctx.send(self.ck(message))
+        await self.send(ctx, message)
         self.save_queue()
 
     @commands.command()
@@ -407,11 +407,11 @@ class LevelAdderMixin:
         allowed = False
         allowed = allow_broadcaster(self, ctx, allowed)
         if not allowed:
-            await ctx.send(self.ck(self._no_permission_response))
+            await self.send(ctx, self._no_permission_response)
             return
         self._queue[ctx.channel.name]['queue'] = []
         self._queue[ctx.channel.name]['current'] = None
-        await ctx.send(self.ck('Queue cleared'))
+        await self.send(ctx, 'Queue cleared')
         self.save_queue()
 
     @commands.command()
@@ -432,12 +432,13 @@ class LevelAdderMixin:
             message = self._queue_not_open_message
         else:
             message = f"{user} you don't have a level submitted."
-        await ctx.send(self.ck(message))
+        await self.send(ctx, message)
 
 class SchedulerMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._schedule_file = 'schedule.json'
+        self.LIST_COOLDOWN_SECONDS = 20
         if not os.path.isfile(self._schedule_file):
             with open(self._schedule_file,'w') as f:
                 json.dump(
@@ -472,6 +473,7 @@ class SchedulerMixin:
             'saturday': 5,
             'sat': 5
         }
+        self.last_list: Dict[str, datetime.datetime] = {}
     
     def _get_current_schedule(self, channel, local_time: datetime.datetime):
         dow = local_time.weekday()
@@ -628,11 +630,12 @@ class SchedulerMixin:
 
     async def list_schedule(self, ctx: commands.Context):
         channel = ctx.channel.name
+        self.last_list[channel] = datetime.datetime.now()
         if len(self._schedule[channel]) == 0:
-            await ctx.send("There's nothing on the schedule!")
+            await self.send(ctx, "There's nothing on the schedule!")
             return
         for item in self._schedule[channel]:
-            await ctx.send(self._format_item_str(item))
+            await self.send(ctx, self._format_item_str(item))
             await asyncio.sleep(1.1)
         return
 
@@ -648,7 +651,7 @@ class SchedulerMixin:
                 allowed = False
                 allowed = allow_broadcaster(self, ctx, allowed)
                 if not allowed:
-                    await ctx.send(self.ck(self._no_permission_response))
+                    await self.send(ctx, self._no_permission_response)
                     return
                 if len(content) < 6:
                     message = 'Not enough arguments: !schedule add [start day of week] [start 24hr time] [end 24hr time] [Game]'
@@ -658,20 +661,19 @@ class SchedulerMixin:
                     content[5] = game
                     message = self._add_to_schedule(channel, *content[2:])
             elif content[1] == 'list':
-                allowed = False
-                allowed = allow_broadcaster(self, ctx, allowed)
-                if not allowed:
-                    await ctx.send(self.ck(self._no_permission_response))
-                    return
-                asyncio.create_task(
-                    self.list_schedule(ctx)
-                )
+                last_list = self.last_list.get(channel)
+                if last_list is not None and ((datetime.datetime.now() - last_list).total_seconds() <= self.LIST_COOLDOWN_SECONDS):
+                    await self.send(ctx, "I just did this. Wait a bit before trying again.")
+                else:
+                    asyncio.create_task(
+                        self.list_schedule(ctx)
+                    )
                 return
             elif command == 'remove':
                 allowed = False
                 allowed = allow_broadcaster(self, ctx, allowed)
                 if not allowed:
-                    await ctx.send(self.ck(self._no_permission_response))
+                    await self.send(ctx, self._no_permission_response)
                     return
                 if len(content) < 4:
                     message = 'Not enough arguments: !schedule remove [day of week] [24hr time]'
@@ -681,7 +683,7 @@ class SchedulerMixin:
             else:
                 message = self._get_schedule(channel, tz_name=' '.join(content[1:]))
         if message is not None:
-            await ctx.send(message)
+            await self.send(ctx, message)
 
 
 class Bot(commands.Bot):
@@ -718,6 +720,11 @@ class Bot(commands.Bot):
         self._repeat_preventer = '\U000e0000'
         self._last_message = ''
 
+    async def send(self, ctx, message):
+        await ctx.send(self.ck(message))
+        return
+
+
     def parse_content(self, s):
         return s.strip(self._repeat_preventer).strip().split()
 
@@ -733,11 +740,11 @@ class Bot(commands.Bot):
 
     @commands.command()
     async def where(self, ctx: commands.Context):
-         await ctx.send(self.ck(f'Hello, I am here!'))
+         await self.send(ctx, f'Hello, I am here!')
 
     @commands.command()
     async def hello(self, ctx: commands.Context):
-        await ctx.send(self.ck(f'Hello {ctx.author.name}!'))
+        await self.send(ctx, f'Hello {ctx.author.name}!')
 
     @commands.command()
     async def add_whitelist(self, ctx: commands.Context):
@@ -745,12 +752,12 @@ class Bot(commands.Bot):
         allowed = allow_mods(self, ctx, allowed)
         content = self.parse_content(ctx.message.content)
         if not allowed:
-            await ctx.send(self.ck(self._no_permission_response))
+            await self.send(ctx, self._no_permission_response)
         elif content[1] not in self._bot_whitelist:
-            await ctx.send(self.ck(f"You're cool {content[1]}"))
+            await self.send(ctx, f"You're cool {content[1]}")
             self._bot_whitelist.append(content[1])
         else:
-            await ctx.send(self.ck(f"{content[1]} is already cool with me!"))
+            await self.send(ctx, f"{content[1]} is already cool with me!")
 
     @commands.command()
     async def remove_whitelist(self, ctx: commands.Context):
@@ -758,11 +765,11 @@ class Bot(commands.Bot):
         allowed = allow_mods(self, ctx, allowed)
         content = self.parse_content(ctx.message.content)
         if not allowed:
-            await ctx.send(self.ck(self._no_permission_response))
+            await self.send(ctx, self._no_permission_response)
         elif content[1] not in self._bot_whitelist:
-            await ctx.send(self.ck(f"I wasn't cool with you anyway {content[1]}"))
+            await self.send(ctx, f"I wasn't cool with you anyway {content[1]}")
         else:
-            await ctx.send(self.ck(f"You're dead to me {content[1]}!"))
+            await self.send(ctx, f"You're dead to me {content[1]}!")
             self._bot_whitelist.remove(content[1])
 
 def create_bot(config, user):
