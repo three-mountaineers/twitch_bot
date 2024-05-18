@@ -1,6 +1,7 @@
 from mountaineer_bot import windows_auth, core
 import time
 from typing import Type
+import traceback
 
 def main(bot: Type[core.Bot], config, user):
     bot = bot(config_file=config, user=user)
@@ -17,7 +18,7 @@ def main_instantiator(bot:  Type[core.Bot]):
             main(bot=bot, **args)
         except KeyError as e:
             print('Error encountered')
-            breakpoint()
+            print(traceback.format_exc())
             print('Rebooting...')
             time.sleep(60)
 
