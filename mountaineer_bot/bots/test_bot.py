@@ -32,6 +32,6 @@ if __name__ == "__main__":
 
         # Implement your desired logic here (e.g., respond to the redemption)
         # For demonstration purposes, we'll print the redemption message
-        print(message)
+        logging.log(logging.INFO, message)
 
     bot.run()

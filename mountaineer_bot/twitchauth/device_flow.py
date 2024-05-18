@@ -4,6 +4,7 @@ import json
 from urllib import parse
 import time
 import webbrowser
+import logging
 
 from mountaineer_bot import windows_auth
 
@@ -22,12 +23,11 @@ def initial_authenticate(config_str, scopes: List[str], headless: bool=False):
     }
     r = requests.post('https://id.twitch.tv/oauth2/device', headers=headers, data=data)
     main_result = json.loads(r.content)
-    print(main_result)
     if headless:
-        print(f'Please open this link in your browser: {main_result["verification_uri"]}')
+        logging.log(100, f'Please open this link in your browser: {main_result["verification_uri"]}')
     else:
         webbrowser.open(main_result["verification_uri"])
-    print(f'The activation code is: {main_result["user_code"]}')
+    logging.log(100, f'The activation code is: {main_result["user_code"]}')
 
     t = time.time()
     grant = False

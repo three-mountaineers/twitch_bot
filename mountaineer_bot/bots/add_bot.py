@@ -1,5 +1,6 @@
 from twitchio.ext import commands
 import time
+import logging
 
 from mountaineer_bot.core import Bot, BotMixin
 from mountaineer_bot.entry_point import main
@@ -22,7 +23,7 @@ class FirstAdderMixin(BotMixin):
     async def queue(self, ctx: commands.Context):
         channel = ctx.channel.name
         if channel in ['aurateur','three_mountaineers']:
-            print("I saw this in aura's channel")
+            logging.log(logging.INFO, "I saw this in aura's channel")
 
 class CustomBot(FirstAdderMixin, Bot):
     pass

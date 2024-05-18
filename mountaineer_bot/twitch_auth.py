@@ -4,6 +4,7 @@ import requests
 from urllib import parse
 import json
 import configparser
+import logging
 
 import webbrowser
 from flask import Flask, request as fsk_rqs, redirect, url_for
@@ -116,7 +117,7 @@ def main(config, scopes=['read_chat']) -> Flask:
         webbrowser.open(LOCAL_URL.format(port=configs['PORT'])+f'/login/{configs["BOT_NICK"]}')
         app.run(port=configs['PORT'], debug=False)
     else:
-        print('All required clients scopes have been granted. Continuing.')
+        logging.log(logging.INFO, 'All required clients scopes have been granted. Continuing.')
     return
 
 def refresh_access_token(config_str):

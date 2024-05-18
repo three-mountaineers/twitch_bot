@@ -1,5 +1,6 @@
 import os
 from typing import List
+import logging
 
 from twitchio.ext import commands
 
@@ -63,9 +64,8 @@ class Bot(BotMixin, commands.Bot):
         self._last_message = '' 
 
     def run(self):
-        print('Running in channels: {}'.format(', '.join(self._config['CHANNELS'])))
+        logging.log(logging.INFO, 'Running in channels: {}'.format(', '.join(self._config['CHANNELS'])))
         super().run()
-
     def ck(self, message):
         if self._last_message == message:
             self._last_message = message + self._repeat_preventer
@@ -74,16 +74,16 @@ class Bot(BotMixin, commands.Bot):
         return message
 
     async def event_ready(self):
-        print(f"{self.nick} is online!")
+        logging.log(logging.INFO, f"{self.nick} is online!")
 
     @commands.command()
     async def where(self, ctx: commands.Context):
-         print("I've been hailed!")
-         await self.send(ctx, f'Hello, I am here!')
+        logging.log(logging.DEBUG, "I've been hailed!")
+        await self.send(ctx, f'Hello, I am here!')
 
     @commands.command()
     async def hello(self, ctx: commands.Context):
-        print("[hello] I've been hailed!")
+        logging.log(logging.DEBUG, "[hello] I've been hailed!")
         await self.send(ctx, f'Hello {ctx.author.name}!')
 
     @commands.command()

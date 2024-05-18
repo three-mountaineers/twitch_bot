@@ -2,6 +2,7 @@ from typing import Dict, Optional
 import asyncio
 import math
 import time
+import logging
 
 from twitchio.ext import commands, routines
 
@@ -96,7 +97,7 @@ class CountdownMixin(BotMixin):
             # Print the time
             message = self.format_time_remain(int_dt, key=key)
             await self.send(ctx, message)
-            #print(message)
+            logging.log(logging.DEBUG, message)
             if message == self.format_time_remain(0):
                 break
 

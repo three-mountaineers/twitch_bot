@@ -4,6 +4,7 @@ import json
 import re
 import datetime
 from random import randrange
+import logging
 
 from twitchio.ext import commands
 from twitchio.message import Message
@@ -39,5 +40,5 @@ class FirstIdentifier(BotMixin):
     async def event_message(self, message: Message):
         await super().event_message(message=message)
         #message.channel.send()
-        print(f'[{message.channel.name}] {message.author.name}: {message.content}')
+        logging.log(logging.DEBUG, f'[{message.channel.name}] {message.author.name}: {message.content}')
         pass
