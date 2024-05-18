@@ -3,15 +3,13 @@ import time
 from typing import Type
 import traceback
 
-def main(bot: Type[core.Bot], config):
-    try:
-        bot = bot(config_file=config)
-    except KeyError:
-        twitch_auth.main(config)
-        bot = bot(config_file=config)
+def main(bot: Type[core.Bot], config: str):
+    twitch_auth.refresh_access_token(config_str=config)
+    bot = bot(config_file=config)
     granted_scopes = twitch_auth.check_granted_scopes(config)
     missing_scopes = [x for x in bot._required_scope if x not in granted_scopes]
     if len(missing_scopes):
+        print(f'Missing scopes: {missing_scopes}')
         twitch_auth.main(config, scopes=missing_scopes)
     else:
         bot.run()

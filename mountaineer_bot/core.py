@@ -30,7 +30,7 @@ class Bot(BotMixin, commands.Bot):
         _configs = windows_auth.get_password(windows_auth.read_config(config_file))
         super().__init__(
             config_file=config_file,
-            token=twitch_auth.refresh_access_token(config=_configs, user=_configs['BOT_NICK']),
+            token=twitch_auth.refresh_access_token(config_str=config_file),
             prefix= _configs['BOT_PREFIX'],
             client_id = _configs['CLIENT_ID'], 
             client_secret = _configs['SECRET'],
