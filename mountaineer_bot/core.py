@@ -60,6 +60,7 @@ class Bot(BotMixin, commands.Bot):
         self._invalid_response = self._config['INVALID_COMMAND_RESPONSE']
         self._no_permission_response = self._config['NO_PERMISSION_RESPONSE']
         self._bot_whitelist = self._config.get('WHITE_LIST_USERS',[])
+        self._bot_blacklist = self._config.get('BLACK_LIST_USERS',[])
         self._repeat_preventer = '\U000e0000'
         self._last_message = '' 
 
@@ -105,3 +106,23 @@ class Bot(BotMixin, commands.Bot):
         else:
             await self.send(ctx, f"You're dead to me {content[1]}!")
             self._bot_whitelist.remove(content[1])
+
+    @commands.command()
+    @restrict_command(['Mods', 'Broadcaster'])
+    async def add_blacklist(self, ctx: commands.Context):
+        content = self.parse_content(ctx.message.content)
+        if content[1] not in self._bot_blacklist:
+            await self.send(ctx, f"You're dead to me {content[1]}")
+            self._bot_blacklist.append(content[1])
+        else:
+            await self.send(ctx, f"{content[1]} is already dead to me.")
+
+    @commands.command()
+    @restrict_command(['Mods', 'Broadcaster'])
+    async def remove_blacklist(self, ctx: commands.Context):
+        content = self.parse_content(ctx.message.content)
+        if content[1] not in self._bot_blacklist:
+            await self.send(ctx, f"I was cool with you already {content[1]} :)")
+        else:
+            await self.send(ctx, f"You're cool again I guess {content[1]}!")
+            self._bot_blacklist.remove(content[1])

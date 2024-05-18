@@ -2,7 +2,7 @@ from typing import Literal, List
 
 from functools import wraps
 
-def restrict_command(allowed: List[Literal['Whitelist', 'Broadcaster', 'Mods', 'All']]):
+def restrict_command(allowed: List[Literal['Whitelist', 'Broadcaster', 'Mods', 'All']], blacklist_enabled=True):
     def decorator(func):
         @wraps(func)
         async def wrapper(self, ctx, *args, **kwargs):
@@ -15,7 +15,7 @@ def restrict_command(allowed: List[Literal['Whitelist', 'Broadcaster', 'Mods', '
                 is_allowed = True or is_allowed
             if 'Mods' in allowed and ctx.author.is_mod:
                 is_allowed = True or is_allowed
-            if not is_allowed:
+            if not is_allowed or (blacklist_enabled and ctx.author.name in self._bot_blacklist):
                 await self.send(ctx, self._no_permission_response)
             else:
                 await func(self, ctx, *args, **kwargs)
