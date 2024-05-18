@@ -1,6 +1,7 @@
 from typing import Literal, List
-
 from functools import wraps
+
+from mountaineer_bot import core
 
 def restrict_command(
         allowed: List[Literal['Whitelist', 'Broadcaster', 'Mods']]=['Broadcaster'], 
@@ -9,7 +10,7 @@ def restrict_command(
     ):
     def decorator(func):
         @wraps(func)
-        async def wrapper(self, ctx, *args, **kwargs):
+        async def wrapper(self: core.Bot, ctx, *args, **kwargs):
             if 'Broadcaster' in allowed and ctx.author.is_broadcaster:
                 is_allowed = True
             elif blacklist_enabled and ctx.author.name in self._bot_blacklist:
@@ -21,7 +22,8 @@ def restrict_command(
             else:
                 is_allowed = default
             if not is_allowed:
-                await self.send(ctx, self._no_permission_response)
+                if self._no_permission_response is not None:
+                    await self.send(ctx, self._no_permission_response)
             else:
                 await func(self, ctx, *args, **kwargs)
         return wrapper

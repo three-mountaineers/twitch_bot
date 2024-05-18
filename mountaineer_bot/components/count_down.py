@@ -37,11 +37,9 @@ class CountdownMixin(BotMixin):
                 message = self.stop_countdown(channel, key=key)
                 await self.send(ctx, message)
             else:
-                if self._invalid_response is not None:
-                    await self.send(ctx, self._invalid_response)
-        elif dt <= 0:
-            if self._invalid_response is not None:
                 await self.send(ctx, self._invalid_response)
+        elif dt <= 0:
+            await self.send(ctx, self._invalid_response)
         else:
             if len(content) == 2:
                 key = None

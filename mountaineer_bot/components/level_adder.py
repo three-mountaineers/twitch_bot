@@ -105,7 +105,6 @@ class LevelAdderMixin(BotMixin):
                         message = f'Your level has been added {user}'
                 else:
                     message = f'Invalid level code: level codes need to look like {self._level_code_pattern}'
-
         await self.send(ctx, message)
         self.save_queue()
 

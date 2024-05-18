@@ -17,7 +17,8 @@ class BotMixin:
         self._repeat_preventer = '\U000e0000'
 
     async def send(self, ctx, message):
-        await ctx.send(self.ck(message))
+        if message is not None:
+            await ctx.send(self.ck(message))
         return
 
     def parse_content(self, s):
@@ -57,8 +58,8 @@ class Bot(BotMixin, commands.Bot):
             )
         self._http._refresh_token = windows_auth.get_refresh_token(config=self._config, username=_configs['BOT_NICK'])
         self._user = _configs['BOT_NICK']
-        self._invalid_response = self._config['INVALID_COMMAND_RESPONSE']
-        self._no_permission_response = self._config['NO_PERMISSION_RESPONSE']
+        self._invalid_response = self._config.get('INVALID_COMMAND_RESPONSE')
+        self._no_permission_response = self._config.get('NO_PERMISSION_RESPONSE')
         self._bot_whitelist = self._config.get('WHITE_LIST_USERS',[])
         self._bot_blacklist = self._config.get('BLACK_LIST_USERS',[])
         self._repeat_preventer = '\U000e0000'
