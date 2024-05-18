@@ -46,18 +46,9 @@ We are going to populate the information the bot needs to talk Twitch now in the
 1. Hit "Windows+ "Q" key -> "Command Prompt"
 2. Change directory to where you downloaded the code
 3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.bots.mod_bot -c env.cfg`
-4. If this is the first time you've run it, you'll be directed to an authorization page. Check the permissions and approve it. MAKE SURE YOU'RE LOGGED IN AS YOUR BOT ACCOUNT. Else skip to step 6
-5. A browser window should pop up that says: Successfully authorized using code flow. You can close this application now by hitting Ctrl + C. Hit `Ctrl` + `C` in the command window do continue. Steps 4-5 will repeat if new permissions are needed.
-
-## Section 5: Start the chatbot
-
-1. Hit "Windows+ "Q" key -> "Command Prompt"
-2. Change directory to where you downloaded the code
-3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.bots.mod_bot -c env.cfg`
-4. You should see "Running in channels: {channels you listed}", then "Starting bot..." and then "{your username} is online!". If you see these, congrats, the bot is ready to go! Otherwise, you might've gone down the Section 4 path.
-5. When you're finished, close the window you created in this section.
-
-When you next want to use the bot, you only need to do Section 4.
+4. An authorization page might come up. Check the permissions needed and authorize if ok.
+5. You should see "Running in channels: {channels you listed}", then "Starting bot..." and then "{your username} is online!". If you see these, congrats, the bot is ready to go! Otherwise, you might've gone down the Section 4 path.
+6. When you're finished, close the window you created in this section.
 
 ## Commands
 

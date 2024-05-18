@@ -10,13 +10,14 @@ from mountaineer_bot.security import restrict_command
 from mountaineer_bot.utils import to_float
 
 class CountdownMixin(BotMixin):
+    _required_scope = [
+        'chat:read',
+        'chat:edit',
+    ]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._cd: Dict[str, Dict[str, Optional[routines.Routine]]] = {channel:{} for channel in self._config['CHANNELS']}
-        self._required_scope += [
-            'chat:read',
-            'chat:edit',
-            ]
+        
         self._countdown_go_text = self._config.get('COUNTDOWN_GO_TEXT',[])
 
     @commands.command()

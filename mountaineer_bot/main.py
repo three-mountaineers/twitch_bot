@@ -1,21 +1,23 @@
 from mountaineer_bot import windows_auth, core, twitch_auth
+from mountaineer_bot.twitchauth import device_flow, core as twitch_auth_core
 import time
 from typing import Type
 import traceback
 
-def main(bot: Type[core.Bot], config: str, headless: bool=False):
-    twitch_auth.refresh_access_token(config_str=config)
-    bot = bot(config_file=config)
-    granted_scopes = twitch_auth.check_granted_scopes(config)
-    missing_scopes = [x for x in bot._required_scope if x not in granted_scopes]
+def main(Bot: Type[core.Bot], config: str, headless: bool=False):
+    granted_scopes = twitch_auth_core.refresh_token(config)
+    if granted_scopes is None:
+        missing_scopes = Bot.get_required_scope()
+        granted_scopes = []
+    else:
+        missing_scopes = [x for x in Bot.get_required_scope() if x not in granted_scopes]
     if len(missing_scopes):
         print(f'Missing scopes: {missing_scopes}')
-        if not headless:
-            twitch_auth.main(config, scopes=missing_scopes)
-    else:
-        bot.run()
+        device_flow.initial_authenticate(config_str=config, scopes=granted_scopes+missing_scopes, headless=headless)
+    bot = Bot(config_file=config)
+    bot.run()
 
-def main_instantiator(bot:  Type[core.Bot]):
+def main_instantiator(Bot:  Type[core.Bot]):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--config', type=str)
@@ -23,7 +25,7 @@ def main_instantiator(bot:  Type[core.Bot]):
     args = vars(parser.parse_args())
     while 1:
         try:
-            main(bot=bot, **args)
+            main(Bot=Bot, **args)
         except KeyError as e:
             print('Error encountered')
             print(traceback.format_exc())

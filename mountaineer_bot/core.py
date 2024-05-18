@@ -3,15 +3,16 @@ from typing import List
 
 from twitchio.ext import commands
 
-from mountaineer_bot import windows_auth, twitch_auth
+from mountaineer_bot import windows_auth
+from mountaineer_bot.twitchauth import core as twitch_auth_core
 from mountaineer_bot.security import restrict_command
 
 class BotMixin:
+    _required_scope: List[str] = []
     def __init__(self, config_file: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._config = windows_auth.get_password(windows_auth.read_config(config_file))
         self._config_dir = os.path.split(config_file)[0]
-        self._required_scope: List[str] = []
         self._repeat_preventer = '\U000e0000'
 
     async def send(self, ctx, message):
@@ -20,8 +21,20 @@ class BotMixin:
 
     def parse_content(self, s):
         return s.strip(self._repeat_preventer).strip().replace(self._repeat_preventer, '').split()
+    
+    @classmethod
+    def get_required_scope(cls):
+        if hasattr(super(), 'get_required_scope'):
+            parent_scope = super().get_required_scope()
+        else:
+            parent_scope = []
+        return list(set(cls._required_scope + parent_scope))
 
 class Bot(BotMixin, commands.Bot):
+    _required_scope = [
+        'chat:read',
+        'chat:edit',
+    ]
     def __init__(
         self,
         config_file: str,
@@ -30,7 +43,7 @@ class Bot(BotMixin, commands.Bot):
         _configs = windows_auth.get_password(windows_auth.read_config(config_file))
         super().__init__(
             config_file=config_file,
-            token=twitch_auth.refresh_access_token(config_str=config_file),
+            token=windows_auth.get_access_token(_configs, _configs['CLIENT_ID']),
             prefix= _configs['BOT_PREFIX'],
             client_id = _configs['CLIENT_ID'], 
             client_secret = _configs['SECRET'],
@@ -41,10 +54,6 @@ class Bot(BotMixin, commands.Bot):
             retain_cache = True,
             **kwargs
             )
-        self._required_scope += [
-            'chat:read',
-            'chat:edit',
-            ]
         self._http._refresh_token = windows_auth.get_refresh_token(config=self._config, username=_configs['BOT_NICK'])
         self._user = _configs['BOT_NICK']
         self._invalid_response = self._config['INVALID_COMMAND_RESPONSE']

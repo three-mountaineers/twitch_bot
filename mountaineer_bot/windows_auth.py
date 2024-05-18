@@ -39,6 +39,9 @@ def read_config(cfg_location):
         config['WHITE_LIST_USERS'] = config['WHITE_LIST_USERS'].split()
     return config
 
+def set_password(config, secret):
+    keyring.set_password(config['WIN_CRED_KEY'], config['CLIENT_ID'], password=secret)
+
 def get_password(config):
     config['SECRET'] = keyring.get_password(config['WIN_CRED_KEY'], config['CLIENT_ID'])
     return config
@@ -47,4 +50,27 @@ def set_refresh_token(config, username, refresh_token):
     keyring.set_password(service_name=config['WIN_CRED_KEY'], username=username+'_refresh_token', password=refresh_token)
 
 def get_refresh_token(config, username):
-    return keyring.get_password(service_name=config['WIN_CRED_KEY'], username=username+'_refresh_token')
+    try:
+        output = keyring.get_password(service_name=config['WIN_CRED_KEY'], username=username+'_refresh_token')
+    except KeyError:
+        output =  None
+    return output
+
+def set_access_token(config, username, refresh_token):
+    keyring.set_password(service_name=config['WIN_CRED_KEY'], username=username+'_access_token', password=refresh_token)
+
+def get_access_token(config, username):
+    try:
+        output = keyring.get_password(service_name=config['WIN_CRED_KEY'], username=username+'_access_token')
+    except KeyError:
+        output =  None
+    return output
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('config', type=str)
+    parser.add_argument('secret', type=str)
+    args = vars(parser.parse_args())
+    configs = read_config(args['config'])
+    set_password(configs, args['secret'])

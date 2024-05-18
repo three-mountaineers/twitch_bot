@@ -11,6 +11,10 @@ from mountaineer_bot import BotMixin
 from mountaineer_bot.security import restrict_command
 
 class SchedulerMixin(BotMixin):
+    _required_scope = [
+        'chat:read',
+        'chat:edit',
+    ]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._schedule_file = os.path.join(self._config_dir, 'schedule.json')

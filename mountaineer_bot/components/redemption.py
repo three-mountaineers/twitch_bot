@@ -12,10 +12,14 @@ from mountaineer_bot import BotMixin
 from mountaineer_bot.security import restrict_command
 
 class FirstIdentifier(BotMixin):
+    _required_scope = [
+        'chat:read', 
+        'chat:edit', 
+        'channel:read:redemptions'
+    ]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._redemption_file = os.path.join(self._config_dir, 'redemption_history.json')
-        self._required_scope += ['chat:read', 'chat:edit', 'channel:read:redemptions']
         if not os.path.isfile(self._redemption_file):
             with open(self._redemption_file,'w') as f:
                 json.dump(
