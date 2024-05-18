@@ -19,7 +19,7 @@ def main_instantiator(bot:  Type[core.Bot]):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--config', type=str)
-    parser.add_argument('-h','--headless', action='store_true')
+    parser.add_argument('-d','--headless', action='store_true')
     args = vars(parser.parse_args())
     while 1:
         try:

@@ -135,7 +135,7 @@ def refresh_access_token(config_str):
     }
     r = requests.post('https://id.twitch.tv/oauth2/token', headers=headers, data=data)
     result = json.loads(r.content)
-    windows_auth.set_refresh_token(config, config['CLIENT_ID'], result['refresh_token'])
+    windows_auth.set_refresh_token(config, config['BOT_NICK'], result['refresh_token'])
     return result['access_token']
 
 if __name__ == "__main__":
