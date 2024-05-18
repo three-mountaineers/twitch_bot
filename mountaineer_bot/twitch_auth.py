@@ -3,6 +3,7 @@ import os
 import requests
 from urllib import parse
 import json
+import configparser
 
 import webbrowser
 from flask import Flask, request as fsk_rqs, redirect, url_for
@@ -21,30 +22,44 @@ TWITCH_SCOPES = {
     'read_redemption':'channel:read:redemptions',
 }
 
-class ShutdownServer(Exception):
-    pass
-
 def get_scopes_file(config_path):
     config_dir = os.path.split(config_path)[0]
-    return os.path.join(config_dir, 'granted_scopes.json')
+    return os.path.join(config_dir, 'granted_scopes.cfg')
 
 def check_granted_scopes(config_path):
     scopes_path = get_scopes_file(config_path)
-    if os.path.isfile(scopes_path):
-        with open(scopes_path,'r') as f:
-            granted = [x.strip() for x in f.readlines()]
+    scope_config = configparser.ConfigParser()
+    configs = windows_auth.read_config(config_path)
+    scope_config.read(scopes_path)
+    if configs['CLIENT_ID'] in scope_config:
+        config_all = {k:v for k,v in scope_config[configs['CLIENT_ID']].items()}
+        granted = config_all.get('granted_scope','').split('\n')
+        granted = [x for x in granted if x!='']
     else:
         granted = []
     return granted
 
 def save_granted_scopes(config_path, scopes:List[str]):
+    scopes = list(set(scopes))
     scopes_path = get_scopes_file(config_path)
-    with open(scopes_path,'w') as f:
-        f.write('\r\n'.join(scopes))
+    scope_config = configparser.ConfigParser()
+    configs = windows_auth.read_config(config_path)
+    scope_config.read(scopes_path)
+    if configs['CLIENT_ID'] not in scope_config:
+        scope_config.add_section(configs['CLIENT_ID'])
+        granted = []
+    else:
+        config_all = {k.upper():v for k,v in scope_config[configs['CLIENT_ID']].items()}
+        granted = config_all.get('granted_scope',[])
+    scopes = '\n'.join(scopes + granted)
+    scope_config.set(configs['CLIENT_ID'], 'granted_scope', scopes)
+    with open(scopes_path, 'w') as f:
+        scope_config.write(f)
 
 def get_scopes(scopes:List[str]=[]):
-    raw_scopes = set([TWITCH_SCOPES.get(x, x) for x in scopes])
-    return raw_scopes
+    raw_scopes = [TWITCH_SCOPES[x] if x in TWITCH_SCOPES else x for x in scopes]
+    raw_scopes = [x for x in raw_scopes if x in TWITCH_SCOPES.values()]
+    return set(raw_scopes)
 
 def parse_scopes_to_url(scopes):
     url_scopes = ' '.join(scopes)
@@ -57,7 +72,7 @@ def main(config, scopes=['read_chat']) -> Flask:
     granted_scopes = check_granted_scopes(config)
     scopes = get_scopes(scopes)
     new_scopes = [x for x in scopes if x not in granted_scopes]
-    full_scope = new_scopes + list(scopes)
+    full_scope = new_scopes + granted_scopes
 
     redirect_uri = LOCAL_URL.format(port=configs['PORT'])
 
@@ -95,14 +110,11 @@ def main(config, scopes=['read_chat']) -> Flask:
         result = json.loads(r.content)
         windows_auth.set_refresh_token(configs, user, result['refresh_token'])
         save_granted_scopes(config_path=config, scopes=full_scope)
-        raise ShutdownServer('Successfully authorized using code flow. You can close this application now.')
+        return 'Successfully authorized using code flow. You can close this application now by hitting Ctrl + C in the command window.'
     
     if len(new_scopes) > 0:
-        try:
-            webbrowser.open(LOCAL_URL.format(port=configs['PORT'])+f'/login/{configs["BOT_NICK"]}')
-            app.run(port=configs['PORT'], debug=False)
-        except ShutdownServer as e:
-            print('Successfully authorized using code flow. Server has been shutdown.')
+        webbrowser.open(LOCAL_URL.format(port=configs['PORT'])+f'/login/{configs["BOT_NICK"]}')
+        app.run(port=configs['PORT'], debug=False)
     else:
         print('All required clients scopes have been granted. Continuing.')
     return

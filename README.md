@@ -19,11 +19,12 @@ We need to make an "application" for the bot to act as, and you'll allowing the 
 3. Create a name. Note this down
 4. OAuth Redirect URL: type `http://localhost:3000`. If it won't let you, set it to `http://localhost`.
 5. Category: Chat Bot
-6. Create
-7. In the next screen, click on "Manage" in the new row that's been created
-8. If step 4 didn't work, change the OAuth Redirect URL now.
-9. Copy the "Client ID". Copy this somewhere.
-10. Click on the "New Secret" button. Copy this somewhere AND DO NOT SHARE IT.
+6. Client Type: Confidential
+7. Create
+8. In the next screen, click on "Manage" in the new row that's been created
+9. If step 4 didn't work, change the OAuth Redirect URL now.
+10. Copy the "Client ID". Copy this somewhere.
+11. Click on the "New Secret" button. Copy this somewhere AND DO NOT SHARE IT.
 
 ## Section 3: Configure the chatbot
 
@@ -40,36 +41,23 @@ We are going to populate the information the bot needs to talk Twitch now in the
 9. User name: The "Client ID" you wrote down
 10. Password: The "New Secret" you wrote down
 
-## Section 4: Let the chatbot act as you (or another account)
+## Section 4: Start the chatbot
 
-1. Hit "Windows" + "Q" key -> "Command Prompt"
+1. Hit "Windows+ "Q" key -> "Command Prompt"
 2. Change directory to where you downloaded the code
-3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.twitch_auth -c env.cfg`. You should see the first line to pop up is `* Serving Flask app 'twitch_auth'`
-4. Open your browser and go to `http://localhost:3000/login/me`
-5. You should get a twitch prompt, and the following:
-    * Under the twitch logo, the name should be what you said Section 2, step 3.
-    * The list of things it should ask you to allow should be and only be:
-        * Send live Stream Chat and Rooms messages
-        * View live Stream Chat and Rooms message
-6. If the above checks out, hit authorize. Otherwise, don't.
-7. Once you hit authorize, a few things will happen. It should then say "Successfully authorized using code flow." in your browser.
-8. Go back to the "Command Prompt" window and hit `Ctrl + C`. Close the window.
-
-Note: You can check the application in Twitch by going to your Settings -> Connections -> Other Connections. Disconnect when you don't need it anymore.
+3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.bots.mod_bot -c env.cfg`
+4. If this is the first time you've run it, you'll be directed to an authorization page. Check the permissions and approve it. MAKE SURE YOU'RE LOGGED IN AS YOUR BOT ACCOUNT. Else skip to step 6
+5. A browser window should pop up that says: Successfully authorized using code flow. You can close this application now by hitting Ctrl + C. Hit `Ctrl` + `C` in the command window do continue. Steps 4-5 will repeat if new permissions are needed.
 
 ## Section 5: Start the chatbot
 
 1. Hit "Windows+ "Q" key -> "Command Prompt"
 2. Change directory to where you downloaded the code
-3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.main -c env.cfg -u me`
-4. You should see "Running in channels: {channels you listed}", then "Starting bot..." and then "{your username} is online!". If you see these, congrats, the bot is ready to go!
+3. Type the following into the "Command Prompt" window: `python -m mountaineer_bot.bots.mod_bot -c env.cfg`
+4. You should see "Running in channels: {channels you listed}", then "Starting bot..." and then "{your username} is online!". If you see these, congrats, the bot is ready to go! Otherwise, you might've gone down the Section 4 path.
 5. When you're finished, close the window you created in this section.
 
-When you next want to use the bot, you only need to do Section 5.
-
-## Additional notes
-
-Keen eyed readers will see that in 4.4, the end of the URL has "me", and in 5.3 the parameter we pass for `-u` is also "me". They are in fact related, and you can call them whatever you want. So if you have multiple bot accounts, you can use them with this same code. Just run section 5 with a new configuration file that `-c` refers to, and a different user that `-u` refers to.
+When you next want to use the bot, you only need to do Section 4.
 
 ## Commands
 

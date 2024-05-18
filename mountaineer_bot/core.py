@@ -1,4 +1,5 @@
 import os
+from typing import List
 
 from twitchio.ext import commands
 
@@ -10,7 +11,7 @@ class BotMixin:
         super().__init__(*args, **kwargs)
         self._config = windows_auth.get_password(windows_auth.read_config(config_file))
         self._config_dir = os.path.split(config_file)[0]
-        self._required_scope = []
+        self._required_scope: List[str] = []
         self._repeat_preventer = '\U000e0000'
 
     async def send(self, ctx, message):
@@ -54,9 +55,7 @@ class Bot(BotMixin, commands.Bot):
 
     def run(self):
         print('Running in channels: {}'.format(', '.join(self._config['CHANNELS'])))
-        print('Starting bot...')
         super().run()
-        print('Ready')
 
     def ck(self, message):
         if self._last_message == message:
@@ -70,10 +69,12 @@ class Bot(BotMixin, commands.Bot):
 
     @commands.command()
     async def where(self, ctx: commands.Context):
+         print("I've been hailed!")
          await self.send(ctx, f'Hello, I am here!')
 
     @commands.command()
     async def hello(self, ctx: commands.Context):
+        print("[hello] I've been hailed!")
         await self.send(ctx, f'Hello {ctx.author.name}!')
 
     @commands.command()
