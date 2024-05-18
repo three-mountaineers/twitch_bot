@@ -1,13 +1,16 @@
 from typing import List
-
+import os
 import requests
 from urllib import parse
-from flask import Flask, request as fsk_rqs, redirect, url_for
 import json
+
+import webbrowser
+from flask import Flask, request as fsk_rqs, redirect, url_for
 
 from mountaineer_bot import windows_auth
 
 auth_url = 'https://id.twitch.tv/oauth2/authorize'
+LOCAL_URL = 'http://localhost:{port}'
 
 TWITCH_SCOPES = {
     'read_chat':'chat:read',
@@ -15,18 +18,48 @@ TWITCH_SCOPES = {
     'read_whisper':'whispers:read',
     'send_whisper':'whispers:edit',
     'moderate_channel':'channel:moderate',
+    'read_redemption':'channel:read:redemptions',
 }
 
-def get_scopes(scopes:List[str]=[], raw_scopes:List[str]=[]):
-    scopes = ' '.join([TWITCH_SCOPES[x] for x in scopes]+raw_scopes)
-    scopes = parse.quote(scopes)
-    return scopes
+class ShutdownServer(Exception):
+    pass
 
-def main(config) -> Flask:
+def get_scopes_file(config_path):
+    config_dir = os.path.split(config_path)[0]
+    return os.path.join(config_dir, 'granted_scopes.json')
+
+def check_granted_scopes(config_path):
+    scopes_path = get_scopes_file(config_path)
+    if os.path.isfile(scopes_path):
+        with open(scopes_path,'r') as f:
+            granted = [x.strip() for x in f.readlines()]
+    else:
+        granted = []
+    return granted
+
+def save_granted_scopes(config_path, scopes:List[str]):
+    scopes_path = get_scopes_file(config_path)
+    with open(scopes_path,'w') as f:
+        f.write('\r\n'.join(scopes))
+
+def get_scopes(scopes:List[str]=[]):
+    raw_scopes = set([TWITCH_SCOPES.get(x, x) for x in scopes])
+    return raw_scopes
+
+def parse_scopes_to_url(scopes):
+    url_scopes = ' '.join(scopes)
+    url_scopes = parse.quote(url_scopes)
+    return url_scopes
+
+def main(config, scopes=['read_chat']) -> Flask:
     configs = windows_auth.get_password(windows_auth.read_config(config))
     app = Flask(__name__)
+    granted_scopes = check_granted_scopes(config)
+    scopes = get_scopes(scopes)
+    new_scopes = [x for x in scopes if x not in granted_scopes]
+    full_scope = new_scopes + list(scopes)
 
-    redirect_uri = 'http://localhost:{port}'.format(port=configs['PORT'])
+    redirect_uri = LOCAL_URL.format(port=configs['PORT'])
 
     @app.route('/')
     def home():
@@ -38,15 +71,13 @@ def main(config) -> Flask:
 
     @app.route('/implicit_login/<user>')
     def implicit_login(user):
-        scopes = get_scopes(scopes=['read_chat','send_chat'])
         uri = '{auth_url}?response_type=token&client_id={client_id}&redirect_uri={redirect_uri}&scope={scopes}&state={user}'
-        return redirect(uri.format(auth_url=auth_url, client_id=configs['CLIENT_ID'], redirect_uri=redirect_uri, user=user, scopes=scopes))
+        return redirect(uri.format(auth_url=auth_url, client_id=configs['CLIENT_ID'], redirect_uri=redirect_uri, user=user, scopes=parse_scopes_to_url(full_scope)))
 
     @app.route('/login/<user>')
     def code_login(user):
-        scopes = get_scopes(scopes=['read_chat','send_chat'])
         uri = '{auth_url}?response_type=code&client_id={client_id}&redirect_uri={redirect_uri}&scope={scopes}&state={user}'
-        return redirect(uri.format(auth_url=auth_url, client_id=configs['CLIENT_ID'], redirect_uri=redirect_uri, user=user, scopes=scopes))
+        return redirect(uri.format(auth_url=auth_url, client_id=configs['CLIENT_ID'], redirect_uri=redirect_uri, user=user, scopes=parse_scopes_to_url(full_scope)))
 
     @app.route('/<user>/<code>')
     def code_login_get_token(user, code):
@@ -63,13 +94,22 @@ def main(config) -> Flask:
         r = requests.post('https://id.twitch.tv/oauth2/token', headers=headers, data=data)
         result = json.loads(r.content)
         windows_auth.set_refresh_token(configs, user, result['refresh_token'])
-        return 'Successfully authorized using code flow.'
+        save_granted_scopes(config_path=config, scopes=full_scope)
+        raise ShutdownServer('Successfully authorized using code flow. You can close this application now.')
     
-    app.run(port=configs['PORT'], debug=False)       
+    if len(new_scopes) > 0:
+        try:
+            webbrowser.open(LOCAL_URL.format(port=configs['PORT'])+f'/login/{configs["BOT_NICK"]}')
+            app.run(port=configs['PORT'], debug=False)
+        except ShutdownServer as e:
+            print('Successfully authorized using code flow. Server has been shutdown.')
+    else:
+        print('All required clients scopes have been granted. Continuing.')
+    return
 
 def refresh_access_token(config, user):
     refresh_token = windows_auth.get_refresh_token(config, user)
-    redirect_uri = 'http://localhost:{port}'.format(port=config['PORT'])
+    redirect_uri = LOCAL_URL.format(port=config['PORT'])
     headers = {
         'Content-type': 'application/x-www-form-urlencoded',
     }
@@ -89,5 +129,6 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--config', type=str)
+    parser.add_argument('-s','--scopes', nargs='+', default=['chat:read'])
     args = vars(parser.parse_args())
     app = main(**args)

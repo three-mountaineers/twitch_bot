@@ -1,0 +1,1 @@
+from mountaineer_bot.core import BotMixin

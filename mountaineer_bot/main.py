@@ -1,13 +1,12 @@
 from mountaineer_bot import windows_auth, core
+import time
+from typing import Type
 
-def main(config, user):
-    configs = windows_auth.get_password(windows_auth.read_config(config))
-    bot = core.create_bot(config=configs, user=user)
-    print('Running in channels: {}'.format(', '.join(configs['CHANNELS'])))
-    print('Starting bot...')
+def main(bot: Type[core.Bot], config, user):
+    bot = bot(config_file=config, user=user)
     bot.run()
 
-if __name__ == "__main__":
+def main_instantiator(bot:  Type[core.Bot]):
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--config', type=str)
@@ -15,8 +14,12 @@ if __name__ == "__main__":
     args = vars(parser.parse_args())
     while 1:
         try:
-            main(**args)
+            main(bot=bot, **args)
         except KeyError as e:
             print('Error encountered')
+            breakpoint()
             print('Rebooting...')
-            continue
+            time.sleep(60)
+
+if __name__ == "__main__":
+    main_instantiator(core.Bot)
