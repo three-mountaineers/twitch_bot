@@ -69,20 +69,21 @@ class LevelAdderMixin(BotMixin):
         self._queue[channel]['complete'][new_code] = datetime.date.today().strftime('%Y-%m-%d')
 
     @commands.command()
-    @restrict_command(['Broadcaster'])
+    @restrict_command()
     async def open(self, ctx: commands.Context):
         message = self._queue_status[ctx.channel.name] = True
         message = 'The queue is now open'
         await self.send(ctx, message)
 
     @commands.command()
-    @restrict_command(['Broadcaster'])
+    @restrict_command()
     async def close(self, ctx: commands.Context):
         message = self._queue_status[ctx.channel.name] = False
         message = 'The queue is now closed'
         await self.send(ctx, message)
 
     @commands.command()
+    @restrict_command(default=True)
     async def add(self, ctx: commands.Context):
         content = self.parse_content(ctx.message.content)
         channel = ctx.channel.name
@@ -109,6 +110,7 @@ class LevelAdderMixin(BotMixin):
         self.save_queue()
 
     @commands.command()
+    @restrict_command(default=True)
     async def replace(self, ctx: commands.Context):
         content = self.parse_content(ctx.message.content)
         channel = ctx.channel.name
@@ -137,8 +139,11 @@ class LevelAdderMixin(BotMixin):
         await self.send(ctx, message)
         self.save_queue()
 
+    async def skip(self, ctx: commands.Context):
+        await self.keet(ctx=ctx)
+
     @commands.command()
-    @restrict_command(['Broadcaster'])
+    @restrict_command()
     async def keet(self, ctx: commands.Context):
         content = self.parse_content(ctx.message.content)
         if len(content) == 1:
@@ -148,7 +153,7 @@ class LevelAdderMixin(BotMixin):
         self.save_queue()
 
     @commands.command()
-    @restrict_command(['Broadcaster'])
+    @restrict_command()
     async def next(self, ctx: commands.Context):
         content = self.parse_content(ctx.message.content)
         if len(content) == 1:
@@ -235,7 +240,7 @@ class LevelAdderMixin(BotMixin):
         self.save_queue()
 
     @commands.command()
-    @restrict_command(['Broadcaster'])
+    @restrict_command()
     async def clear(self, ctx: commands.Context):
         self._queue[ctx.channel.name]['queue'] = []
         self._queue[ctx.channel.name]['current'] = None

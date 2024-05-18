@@ -126,3 +126,15 @@ class Bot(BotMixin, commands.Bot):
         else:
             await self.send(ctx, f"You're cool again I guess {content[1]}!")
             self._bot_blacklist.remove(content[1])
+
+    @commands.command()
+    @restrict_command(['Mods', 'Broadcaster'])
+    async def blacklist(self, ctx: commands.Context):
+        blaclist = ', '.join(self._bot_blacklist)
+        await self.send(ctx, f"Naughty Chatters:  {blaclist}")
+
+    @commands.command()
+    @restrict_command(['Mods', 'Broadcaster'])
+    async def whitelist(self, ctx: commands.Context):
+        whitelist = ', '.join(self._bot_whitelist)
+        await self.send(ctx, f"Very nice chatters:  {whitelist}")

@@ -22,7 +22,7 @@ class CountdownMixin(BotMixin):
         self._countdown_go_text = self._config.get('COUNTDOWN_GO_TEXT',[])
 
     @commands.command()
-    @restrict_command(['Mods', 'Broadcaster','Whitelist'])
+    @restrict_command(['Mods', 'Broadcaster', 'Whitelist'])
     async def cd(self, ctx: commands.Context):
         content = self.parse_content(ctx.message.content)
         channel = ctx.channel.name
