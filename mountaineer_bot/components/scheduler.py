@@ -91,8 +91,9 @@ class SchedulerMixin(BotMixin):
     async def _schedule_list(self, ctx: commands.Context):
         channel = ctx.channel.name
         last_list = self.last_list.get(channel)
-        if last_list is not None and ((datetime.datetime.now() - last_list).total_seconds() <= self.LIST_COOLDOWN_SECONDS):
-            await self.send(ctx, "I just did this. Wait a bit before trying again.")
+        time_since_last = int(round(datetime.datetime.now() - last_list).total_seconds())
+        if last_list is not None and (time_since_last <= self.LIST_COOLDOWN_SECONDS) and not ctx.author.is_broadcaster:
+            await self.send(ctx, f"I just did this. Wait a bit ({time_since_last}s) before trying again.")
         else:
             asyncio.create_task(
                 self._list_schedule(ctx)

@@ -20,6 +20,7 @@ def main(Bot: Type[core.Bot], config: str, headless: bool=False):
     bot.run()
 
 def main_instantiator(Bot:  Type[core.Bot]):
+    logging.getLogger().setLevel(logging.INFO)
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('-c','--config', type=str)

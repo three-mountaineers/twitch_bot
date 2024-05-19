@@ -65,7 +65,6 @@ class BotMixin:
 class Bot(BotMixin, commands.Bot):
     _required_scope = [
         'chat:read',
-        'chat:edit',
     ]
     def __init__(
         self,
@@ -96,8 +95,9 @@ class Bot(BotMixin, commands.Bot):
         self._last_message = '' 
 
     def run(self):
-        logging.log(logging.INFO, 'Running in channels: {}'.format(', '.join(self._config['CHANNELS'])))
+        logging.info('Running in channels: {}'.format(', '.join(self._config['CHANNELS'])))
         super().run()
+
     def ck(self, message):
         if self._last_message == message:
             self._last_message = message + self._repeat_preventer
@@ -106,16 +106,16 @@ class Bot(BotMixin, commands.Bot):
         return message
 
     async def event_ready(self):
-        logging.log(logging.INFO, f"{self.nick} is online!")
+        logging.info(f"{self.nick} is online!")
 
     @commands.command()
     async def where(self, ctx: commands.Context):
-        logging.log(logging.DEBUG, "I've been hailed!")
+        logging.info("I've been hailed!")
         await self.send(ctx, f'Hello, I am here!')
 
     @commands.command()
     async def hello(self, ctx: commands.Context):
-        logging.log(logging.DEBUG, "[hello] I've been hailed!")
+        logging.info("[hello] I've been hailed!")
         await self.send(ctx, f'Hello {ctx.author.name}!')
 
     @commands.command()

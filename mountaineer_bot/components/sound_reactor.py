@@ -14,5 +14,6 @@ class SoundReactor(BotMixin):
 
     async def event_message(self, message: Message):
         await super().event_message(message=message)
-        logging.log(logging.DEBUG, f'[{message.channel.name}] {message.author.name}: {message.content}')
-        pass
+        if message.author is None:
+            return
+        logging.info(f'[{message.channel.name}] {message.author.name}: {message.content}')
