@@ -83,7 +83,7 @@ class LevelAdderMixin(BotMixin):
         await self.send(ctx, message)
 
     @commands.command()
-    @restrict_command(default=True)
+    @restrict_command(default=True, live_only=True)
     async def add(self, ctx: commands.Context):
         content = self.parse_content(ctx.message.content)
         channel = ctx.channel.name
@@ -109,7 +109,7 @@ class LevelAdderMixin(BotMixin):
         self.save_queue()
 
     @commands.command()
-    @restrict_command(default=True)
+    @restrict_command(default=True, live_only=True)
     async def replace(self, ctx: commands.Context):
         content = self.parse_content(ctx.message.content)
         channel = ctx.channel.name
@@ -199,6 +199,7 @@ class LevelAdderMixin(BotMixin):
             return f'{user} your level is up! {level_code} @{ctx.channel.name}'
 
     @commands.command()
+    @restrict_command(live_only=True, default=True)
     async def current(self, ctx: commands.Context):
         if self._queue[ctx.channel.name]['current'] is None:
             message = "We're not currently playing a level"
@@ -209,6 +210,7 @@ class LevelAdderMixin(BotMixin):
         await self.send(ctx, message)
 
     @commands.command()
+    @restrict_command(live_only=True, default=True)
     async def queue(self, ctx: commands.Context):
         users = [x['user'] for x in self._queue[ctx.channel.name]['queue']]
         message = str(len(self._queue[ctx.channel.name]['queue'])) + ' level in queue : '+', '.join([x['user'] for x in self._queue[ctx.channel.name]['queue']])
@@ -219,10 +221,12 @@ class LevelAdderMixin(BotMixin):
         await self.send(ctx, message)
 
     @commands.command()
+    @restrict_command(live_only=True, default=True)
     async def list(self, ctx: commands.Context):
         await self.queue(ctx)
 
     @commands.command()
+    @restrict_command(live_only=True, default=True)
     async def leave(self, ctx: commands.Context):
         user = ctx.author.name
         channel = ctx.channel.name
@@ -247,10 +251,12 @@ class LevelAdderMixin(BotMixin):
         self.save_queue()
 
     @commands.command()
+    @restrict_command(live_only=True, default=True)
     async def position(self, ctx: commands.Context):
         await self.check(ctx)
 
     @commands.command()
+    @restrict_command(live_only=True, default=True)
     async def check(self, ctx: commands.Context):
         user = ctx.author.name
         channel = ctx.channel.name

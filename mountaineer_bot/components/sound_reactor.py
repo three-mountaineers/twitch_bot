@@ -12,6 +12,7 @@ class SoundReactor(BotMixin):
         'chat:read',
     ]
 
+    @restrict_command(default=True, live_only=True)
     async def event_message(self, message: Message):
         await super().event_message(message=message)
         if message.author is None:

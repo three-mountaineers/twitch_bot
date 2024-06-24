@@ -1,7 +1,7 @@
 from mountaineer_bot import main, core
-from mountaineer_bot.components import SoundReactor
+from mountaineer_bot.components import SoundReactor, TextCommand
 
-class CustomBot(core.Bot, SoundReactor):
+class CustomBot(TextCommand, core.Bot):
     pass
 
 if __name__ == "__main__":

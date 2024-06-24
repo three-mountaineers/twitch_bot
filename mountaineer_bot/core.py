@@ -1,6 +1,12 @@
 import os
 from typing import List
 import logging
+import time
+import requests
+import json
+import datetime
+import tzlocal
+import pytz
 
 from twitchio.ext import commands
 
@@ -10,33 +16,8 @@ from mountaineer_bot.twitchauth import core as twitch_auth_core
 from typing import Literal, List
 from functools import wraps
 
-from mountaineer_bot import core
-
-def restrict_command(
-        allowed: List[Literal['Whitelist', 'Broadcaster', 'Mods']]=['Broadcaster'], 
-        default=False, 
-        blacklist_enabled=True
-    ):
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(self: "Bot", ctx, *args, **kwargs):
-            if 'Broadcaster' in allowed and ctx.author.is_broadcaster:
-                is_allowed = True
-            elif blacklist_enabled and ctx.author.name in self._bot_blacklist:
-                is_allowed = False
-            elif 'Mods' in allowed and ctx.author.is_mod:
-                is_allowed = True
-            elif 'Whitelist' in allowed and ctx.author.name in self._bot_whitelist:
-                is_allowed = True
-            else:
-                is_allowed = default
-            if not is_allowed:
-                if self._no_permission_response is not None:
-                    await self.send(ctx, self._no_permission_response)
-            else:
-                await func(self, ctx, *args, **kwargs)
-        return wrapper
-    return decorator
+from mountaineer_bot import api
+from mountaineer_bot.security import restrict_command
 
 class BotMixin:
     _required_scope: List[str] = []
@@ -93,10 +74,20 @@ class Bot(BotMixin, commands.Bot):
         self._bot_blacklist = self._config.get('BLACK_LIST_USERS',[])
         self._repeat_preventer = '\U000e0000'
         self._last_message = '' 
+        self._live_status = {}
 
     def run(self):
         logging.info('Running in channels: {}'.format(', '.join(self._config['CHANNELS'])))
         super().run()
+
+    def is_live(self, channel):
+        t = time.time()
+        if channel not in self._live_status or (t - self._live_status[channel]['time']) > 60:
+            self._live_status[channel] = {
+                'live': api.check_channel_is_live(channel),
+                'time': t
+            }
+        return self._live_status[channel]['live']
 
     def ck(self, message):
         if self._last_message == message:
@@ -169,3 +160,28 @@ class Bot(BotMixin, commands.Bot):
     async def whitelist(self, ctx: commands.Context):
         whitelist = ', '.join(self._bot_whitelist)
         await self.send(ctx, f"Very nice chatters:  {whitelist}")
+
+    @commands.command()
+    async def uptime(self, ctx: commands.Context):
+        headers = {
+            'Client-ID': self._config['CLIENT_ID'],
+            'Authorization': 'Bearer {}'.format(
+                windows_auth.get_access_token(
+                    self._config, 
+                    self._config['CLIENT_ID']
+                    )
+                ),
+        }
+        contents = requests.get(
+            f'https://api.twitch.tv/helix/streams?user_login={ctx.channel.name}',
+            headers=headers,
+        ).content
+        contents_dict = json.loads(contents)
+        if len(contents_dict['data']) > 0:
+            now = datetime.datetime.now(tzlocal.get_localzone()).astimezone(pytz.utc).replace(tzinfo=None, microsecond=0)
+            start_at_str = contents_dict['data'][0]['started_at']
+            start_at = datetime.datetime.strptime(start_at_str,'%Y-%m-%dT%H:%M:%SZ')
+            live_time = now - start_at
+            await self.send(ctx, f"{ctx.channel.name} has been live for {live_time}")
+        else:
+            await self.send(ctx, f"{ctx.channel.name} is not live")
