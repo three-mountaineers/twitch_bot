@@ -14,7 +14,7 @@ def main(Bot: Type[core.Bot], config: str, headless: bool=False):
         granted_scopes = []
     else:
         missing_scopes = [x for x in Bot.get_required_scope() if x not in granted_scopes]
-    logging.info(level=f'Missing scopes: {", ".join(missing_scopes)}')
+    logging.info(f'Missing scopes: {", ".join(missing_scopes)}')
     if len(missing_scopes):
         logging.log(logging.INFO, f'Missing scopes: {missing_scopes}')
         device_flow.initial_authenticate(config_str=config, scopes=granted_scopes+missing_scopes, headless=headless)
