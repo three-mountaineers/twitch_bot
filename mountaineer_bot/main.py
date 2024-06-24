@@ -8,13 +8,13 @@ from mountaineer_bot.twitchauth import device_flow, core as twitch_auth_core
 
 def main(Bot: Type[core.Bot], config: str, headless: bool=False):
     granted_scopes = twitch_auth_core.refresh_token(config)
-    logging.log(f'Granted scopes: {", ".join(granted_scopes)}')
+    logging.info(f'Granted scopes: {", ".join(granted_scopes)}')
     if granted_scopes is None:
         missing_scopes = Bot.get_required_scope()
         granted_scopes = []
     else:
         missing_scopes = [x for x in Bot.get_required_scope() if x not in granted_scopes]
-    logging.log(level=f'Missing scopes: {", ".join(missing_scopes)}')
+    logging.info(level=f'Missing scopes: {", ".join(missing_scopes)}')
     if len(missing_scopes):
         logging.log(logging.INFO, f'Missing scopes: {missing_scopes}')
         device_flow.initial_authenticate(config_str=config, scopes=granted_scopes+missing_scopes, headless=headless)
