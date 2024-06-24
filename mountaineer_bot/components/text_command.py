@@ -84,7 +84,7 @@ class TextCommand(BotMixin):
             self.save()
             return text
 
-    @restrict_message(default=True, live_only=True)
+    @restrict_message(default=True)
     async def event_message(self, message: Message):
         await super().event_message(message=message)
         channel = message.channel
@@ -92,6 +92,8 @@ class TextCommand(BotMixin):
             args = message.content.split(' ')
             counter_key = args[0][1:]
             if counter_key in dir(self):
+                return
+            if not self.is_live(message.channel.name):
                 return
             if not self.has_count(channel.name, counter_key):
                 return
