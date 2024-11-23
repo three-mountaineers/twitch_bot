@@ -100,10 +100,12 @@ class TextCommand(BotMixin):
             if len(args) == 1:
                 self.add_count(channel.name, counter_key)
                 text = self.check_command(channel.name, counter_key)
-                await channel.send(text)
+                if text is not None:
+                    await channel.send(text)
             elif args[1] == 'check':
                 text = self.check_command(channel.name, counter_key)
-                await channel.send(text)
+                if text is not None:
+                    await channel.send(text)
 
     @commands.command()
     @restrict_command()
