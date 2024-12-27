@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mountaineer_bot"
+version = "0.0.1"
+description = "Wrapper for pre-rolled bot templates for Twitch"
+requires-python = ">=3.10"
+dependencies = [
+    "twitchio>=2.6.0",
+    "twitchAPI>=3.10.0",
+    "keyring>=23.13.1",
+    "requests>=2.30.0",
+    "flask>=2.3.2",
+    "pytz>=2023.3",
+    "tzlocal>=5.2",
+    "appdirs>=1.4.4",
+]
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE.txt"}
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Topic :: Communications :: Chat",
+  "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]

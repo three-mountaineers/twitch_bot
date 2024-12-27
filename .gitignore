@@ -4,3 +4,7 @@ __pycache__
 .python-version
 level_history.json
 cfgs
+dist
+*.egg-info
+help.txt
+build

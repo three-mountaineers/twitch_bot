@@ -2,11 +2,19 @@ import time
 from typing import Type
 import traceback
 import logging
+import appdirs
+import os
 
-from mountaineer_bot import windows_auth, core, twitch_auth
+from mountaineer_bot import windows_auth, core, twitch_auth, _cfg_loc
 from mountaineer_bot.twitchauth import device_flow, core as twitch_auth_core
 
-def main(Bot: Type[core.Bot], config: str, headless: bool=False):
+def main(Bot: Type[core.Bot], profile: str, headless: bool=False):
+    appdir = appdirs.AppDirs(
+        appname=profile,
+        appauthor=_cfg_loc,
+        roaming=True,
+    )
+    config = os.path.join(appdir.user_config_dir, 'env.cfg')
     granted_scopes = twitch_auth_core.refresh_token(config)
     logging.info(f'Granted scopes: {", ".join(granted_scopes)}')
     if granted_scopes is None:
@@ -25,7 +33,7 @@ def main_instantiator(Bot:  Type[core.Bot]):
     logging.getLogger().setLevel(logging.INFO)
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c','--config', type=str)
+    parser.add_argument('-p','--profile', type=str)
     parser.add_argument('-d','--headless', action='store_true')
     args = vars(parser.parse_args())
     while 1:
