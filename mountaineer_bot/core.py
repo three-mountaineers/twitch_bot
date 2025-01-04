@@ -1,5 +1,5 @@
 import os
-from typing import List
+from typing import List, NotRequired, Optional, Literal, TypedDict, TYPE_CHECKING
 import logging
 import time
 import requests
@@ -7,30 +7,77 @@ import json
 import datetime
 import tzlocal
 import pytz
-
-from twitchio.ext import commands
-
-from mountaineer_bot import windows_auth
-from mountaineer_bot.twitchauth import core as twitch_auth_core
-
-from typing import Literal, List
+import asyncio
+import rel
 from functools import wraps
+import appdirs
+
+from twitchio.ext import commands, eventsub
+
+if TYPE_CHECKING:
+    from mountaineer_bot.tw_events.core import TwitchWebSocket
+from mountaineer_bot import windows_auth
+from mountaineer_bot.twitchauth import core as twitch_auth_core, device_flow
+import mountaineer_bot as mtb
 
 from mountaineer_bot import api
 from mountaineer_bot.security import restrict_command
 
-class BotMixin:
-    _required_scope: List[str] = []
-    def __init__(self, config_file: str, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._config = windows_auth.get_password(windows_auth.read_config(config_file))
-        self._config_dir = os.path.split(config_file)[0]
-        self._repeat_preventer = '\U000e0000'
+class MessageItem(TypedDict):
+    message: str
+    priority: int
+    order: NotRequired[int]
 
-    async def send(self, ctx, message):
-        if message is not None:
-            await ctx.send(self.ck(message))
-        return
+class BotMixin:
+    _invalid_response: Optional[str] = None
+    _required_scope: List[str] = []
+    _appdir: appdirs.AppDirs
+    _channels: list[str]
+    _config_file: str
+
+    def __init__(
+            self, 
+            config_file: str, 
+            dryrun:bool=False, 
+            *args, 
+            **kwargs
+        ):
+        super().__init__(*args, **kwargs)
+        self._config = windows_auth.read_config(config_file, key=None)
+        windows_auth.get_password(self._config['TWITCH_BOT'])
+        self._repeat_preventer = '\U000e0000'
+        self.dryrun = dryrun
+        self._message_queue: list[MessageItem] = []
+        self._message_queue_routine: None | asyncio.Task = None
+        self._message_idx = 0
+
+    def save_config(self):
+        windows_auth.write_config(self._config_file, self._config)
+
+    async def _send(self, ctx):
+        while len(self._message_queue) > 0:
+            self._message_queue = list(sorted(self._message_queue, key=lambda x: (x['priority'], x['order'])))
+            message = self._message_queue.pop(0)
+            if self.dryrun:
+                logging.debug(f'[{len(self._message_queue)}]: {self.ck(message['message'])}')
+            else:
+                await ctx.send(self.ck(message['message']))
+            await asyncio.sleep(0.5)
+    
+    async def send(self, ctx, message: Optional[str], priority: int=1):
+        if message is None:
+            return
+        self._message_idx += 1
+        self._message_queue.append({
+            'message': message,
+            'priority': priority,
+            'order': self._message_idx,
+        })
+        
+        if self._message_queue_routine is None:
+            self._message_queue_routine = asyncio.create_task(self._send(ctx=ctx))
+        elif self._message_queue_routine.done():
+            self._message_queue_routine = asyncio.create_task(self._send(ctx=ctx))
 
     def parse_content(self, s):
         return s.strip(self._repeat_preventer).strip().replace(self._repeat_preventer, '').split()
@@ -43,51 +90,82 @@ class BotMixin:
             parent_scope = []
         return list(set(cls._required_scope + parent_scope))
 
+def to_list(val: str | list[str]):
+    if isinstance(val, str):
+        return [val]
+    else:
+        return val
+
 class Bot(BotMixin, commands.Bot):
-    _required_scope = [
-        'chat:read',
-    ]
     def __init__(
         self,
-        config_file: str,
+        profile: str,
+        dryrun: bool = True,
+        headless: bool = False,
         **kwargs
     ):
-        _configs = windows_auth.get_password(windows_auth.read_config(config_file))
+        self._appdir = appdirs.AppDirs(
+            appname=profile,
+            appauthor=mtb._cfg_loc,
+            roaming=True,
+        )
+        self._config_file = os.path.join(self._appdir.user_config_dir, 'env.cfg')
+        self._config = windows_auth.read_config(self._config_file, key=None)
+        configs = self._config['TWITCH_BOT']
+        windows_auth.get_password(self._config['TWITCH_BOT'])
+        self._required_scope += [
+            'chat:read',
+        ]
+        self._required_scope = list(set(self._required_scope))
+        self.login(headless=headless)
         super().__init__(
-            config_file=config_file,
-            token=windows_auth.get_access_token(_configs, _configs['CLIENT_ID']),
-            prefix= _configs['BOT_PREFIX'],
-            client_id = _configs['CLIENT_ID'], 
-            client_secret = _configs['SECRET'],
-            initial_channels = _configs['CHANNELS'],
-            nick = _configs['BOT_NICK'], 
+            config_file=self._config_file,
+            token=windows_auth.get_access_token(configs, configs['CLIENT_ID']),
+            prefix= configs['BOT_PREFIX'],
+            client_id = configs['CLIENT_ID'], 
+            client_secret = configs['SECRET'],
+            initial_channels = to_list(configs['CHANNELS']),
+            nick = configs['BOT_NICK'], 
             loop = None,
             heartbeat = 30,
             retain_cache = True,
             **kwargs
             )
-        self._http._refresh_token = windows_auth.get_refresh_token(config=self._config, username=_configs['BOT_NICK'])
-        self._user = _configs['BOT_NICK']
-        self._invalid_response = self._config.get('INVALID_COMMAND_RESPONSE')
-        self._no_permission_response = self._config.get('NO_PERMISSION_RESPONSE')
-        self._bot_whitelist = self._config.get('WHITE_LIST_USERS',[])
-        self._bot_blacklist = self._config.get('BLACK_LIST_USERS',[])
+        self._http._refresh_token = windows_auth.get_refresh_token(config=configs, username=configs['BOT_NICK'])
+        self._user = configs['BOT_NICK']
+        self._invalid_response = configs.get('INVALID_COMMAND_RESPONSE')
+        self._no_permission_response = configs.get('NO_PERMISSION_RESPONSE')
+        self._channels = to_list(configs.get('CHANNELS', []))
+        self._bot_whitelist = to_list(configs.get('WHITE_LIST_USERS', []))
+        self._bot_blacklist = to_list(configs.get('BLACK_LIST_USERS', []))
         self._repeat_preventer = '\U000e0000'
         self._last_message = '' 
-        self._live_status = {}
+        self._is_live = False
+        self._dryrun = dryrun
+
+    def login(self, headless: bool=False):
+        granted_scopes = twitch_auth_core.refresh_token(self._config['TWITCH_BOT'])
+        logging.info(f'Granted scopes: {", ".join(granted_scopes)}')
+        if granted_scopes is None:
+            missing_scopes = self._required_scope
+            granted_scopes = []
+        else:
+            missing_scopes = [x for x in self._required_scope if x not in granted_scopes]
+        logging.info(f'Missing scopes: {", ".join(missing_scopes)}')
+        if len(missing_scopes):
+            logging.log(logging.INFO, f'Missing scopes: {missing_scopes}')
+            device_flow.initial_authenticate(config=self._config['TWITCH_BOT'], scopes=granted_scopes+missing_scopes, headless=headless)
+
+    async def start(self):
+        logging.info('Running in channels: {}'.format(', '.join(self._channels)))
+        await super().start()
 
     def run(self):
-        logging.info('Running in channels: {}'.format(', '.join(self._config['CHANNELS'])))
+        logging.info('Running in channels: {}'.format(', '.join(self._channels)))
         super().run()
 
     def is_live(self, channel):
-        t = time.time()
-        if channel not in self._live_status or (t - self._live_status[channel]['time']) > 60:
-            self._live_status[channel] = {
-                'live': api.check_channel_is_live(channel),
-                'time': t
-            }
-        return self._live_status[channel]['live']
+        return True
 
     def ck(self, message):
         if self._last_message == message:
@@ -102,7 +180,7 @@ class Bot(BotMixin, commands.Bot):
     @commands.command()
     async def where(self, ctx: commands.Context):
         logging.info("I've been hailed!")
-        await self.send(ctx, f'Hello, I am here!')
+        await self.send(ctx, f'Hello, I am here!', priority=0)
 
     @commands.command()
     async def hello(self, ctx: commands.Context):

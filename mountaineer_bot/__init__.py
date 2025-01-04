@@ -1,4 +1,5 @@
 from mountaineer_bot.core import BotMixin
+from mountaineer_bot.tw_events.core import BotEventMixin
 
 import os
 

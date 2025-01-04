@@ -11,20 +11,20 @@ from mountaineer_bot import BotMixin
 from mountaineer_bot.security import restrict_command
 
 class SchedulerMixin(BotMixin):
-    _required_scope = [
-        'chat:read',
-        'chat:edit',
-    ]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._schedule_file = os.path.join(self._config_dir, 'schedule.json')
+        self._required_scope = [
+            'chat:read',
+            'chat:edit',
+        ]
+        self._schedule_file = os.path.join(self._appdir.user_config_dir, 'schedule.json')
         self.LIST_COOLDOWN_SECONDS = 300
         if not os.path.isfile(self._schedule_file):
             with open(self._schedule_file,'w') as f:
                 json.dump(
                     {
                         x:[]
-                        for x in self._config['CHANNELS']
+                        for x in self._channels
                     },
                     f
                 )
@@ -117,7 +117,6 @@ class SchedulerMixin(BotMixin):
             return
         for item in self._schedule[channel]:
             await self.send(ctx, self._format_item_str(item))
-            await asyncio.sleep(1.1)
         return
 
     def _get_current_schedule(self, channel, local_time: datetime.datetime):

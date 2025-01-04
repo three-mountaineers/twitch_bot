@@ -6,3 +6,5 @@ flask==2.3.2
 pytz==2023.3
 tzlocal==5.2
 appdirs==1.4.4
+websockets==14.1
+playsound==1.2.2

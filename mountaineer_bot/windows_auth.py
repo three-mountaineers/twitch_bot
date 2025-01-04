@@ -1,5 +1,5 @@
 import configparser
-from typing import Optional
+from typing import Optional, overload, Any
 import platform
 import os
 if platform.system() == 'Windows':
@@ -30,14 +30,50 @@ elif platform.system() == 'Linux':
                 cfg.write(f)
     keyring = Keyring()
 
-def read_config(cfg_location):
+def split_delimit_string(text: str) -> str | list[str]:
+    output = [x for x in text.split('\n') if x!= '']
+    if len(output) > 1:
+        return output
+    else:
+        return output[0]
+
+@overload
+def read_config(cfg_location: str, key: None = None) -> dict[str, dict[str, Any]]:
+    ...
+
+@overload
+def read_config(cfg_location: str, key: str) -> dict[str, Any]:
+    ...
+
+def read_config(cfg_location: str, key: Optional[str] = None):
     config = configparser.ConfigParser()
     config.read(cfg_location)
-    config = {k.upper():v for k,v in config['TWITCH_BOT'].items()}
-    config['CHANNELS'] = config['CHANNELS'].split()
-    if 'WHITE_LIST_USERS' in config.keys():
-        config['WHITE_LIST_USERS'] = config['WHITE_LIST_USERS'].split()
-    return config
+    if key is None:
+        output = {k.upper(): {kk.upper(): split_delimit_string(vv) for kk, vv in v.items() if vv != ''} for k,v in config.items()}
+    elif key in config:
+        output = {k.upper(): split_delimit_string(v) for k,v in config[key].items() if v != ''}
+    else:
+        output = {}
+    return output
+
+def write_config(cfg_location: str, val: dict, key: Optional[str]=None):
+    config = configparser.ConfigParser()
+    if key is not None:
+        config.read(cfg_location)
+        config[key] = val
+    else:
+        for k,v in val.items():
+            if k != 'DEFAULT':
+                config.add_section(k)
+            for kk, vv in v.items():
+                if kk == 'SECRET':
+                    pass
+                elif isinstance(vv, list):
+                    config[k][kk] = '\n' + '\n'.join([''] + vv)
+                else:
+                    config[k][kk] = vv
+    with open(cfg_location, 'w') as f:
+        config.write(f)
 
 def set_password(config, secret):
     keyring.set_password(config['WIN_CRED_KEY'], config['CLIENT_ID'], password=secret)

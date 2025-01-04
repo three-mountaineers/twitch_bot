@@ -12,8 +12,7 @@ def parse_scopes_to_url(scopes):
     url_scopes = ' '.join(scopes)
     return url_scopes
 
-def initial_authenticate(config_str, scopes: List[str], headless: bool=False):
-    config = windows_auth.get_password(windows_auth.read_config(config_str))
+def initial_authenticate(config, scopes: List[str], headless: bool=False):
     headers = {
         'Content-type': 'application/x-www-form-urlencoded',
     }
@@ -44,9 +43,21 @@ def initial_authenticate(config_str, scopes: List[str], headless: bool=False):
         
         if not grant:
             time.sleep(main_result['interval']+1)
-
+    
     if not grant:
         raise RuntimeError('Device code has expired. Please restart the application.')
 
     windows_auth.set_refresh_token(config, config['CLIENT_ID'], result['refresh_token'])
     windows_auth.set_access_token(config, config['CLIENT_ID'], result['access_token'])
+
+    return get_token_user(client_id=config['CLIENT_ID'], token=result['access_token'])
+
+
+def get_token_user(client_id: str, token: str):
+    headers = {
+        'Content-type': 'application/x-www-form-urlencoded',
+        'Client-Id': client_id,
+        'Authorization': f'Bearer {token}'
+    }
+    r = requests.get('https://api.twitch.tv/helix/users', headers=headers)
+    return json.loads(r.content)['data'][0]['login']

@@ -9,18 +9,17 @@ import logging
 from twitchio.ext import commands
 from twitchio.message import Message
 
-from mountaineer_bot import BotMixin
+from mountaineer_bot import BotMixin, BotEventMixin
 from mountaineer_bot.security import restrict_command
 
-class FirstIdentifier(BotMixin):
-    _required_scope = [
-        'chat:read', 
-        'chat:edit', 
-        'channel:read:redemptions'
-    ]
+class FirstIdentifier(BotMixin, BotEventMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._redemption_file = os.path.join(self._config_dir, 'redemption_history.json')
+        self._required_scope = [
+            'chat:read', 
+            'chat:edit', 
+        ]
+        self._redemption_file = os.path.join(self._appdir.user_config_dir, 'redemption_history.json')
         if not os.path.isfile(self._redemption_file):
             with open(self._redemption_file,'w') as f:
                 json.dump(
@@ -32,13 +31,3 @@ class FirstIdentifier(BotMixin):
                 )
         with open(self._redemption_file,'r') as f:
             self._schedule: Dict[str, List[List]] = json.load(f)
-
-    #def event(self, *args, **kwargs):
-    #    pass
-    #
-    #@event
-    async def event_message(self, message: Message):
-        await super().event_message(message=message)
-        #message.channel.send()
-        logging.log(logging.DEBUG, f'[{message.channel.name}] {message.author.name}: {message.content}')
-        pass

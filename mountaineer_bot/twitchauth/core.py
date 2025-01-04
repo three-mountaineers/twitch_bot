@@ -4,8 +4,7 @@ import logging
 
 from mountaineer_bot import windows_auth
 
-def refresh_token(config_str):
-    config = windows_auth.get_password(windows_auth.read_config(config_str))
+def refresh_token(config):
     refresh_token = windows_auth.get_refresh_token(config, config['CLIENT_ID'])
     if refresh_token is None:
         return None

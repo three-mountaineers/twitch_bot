@@ -51,8 +51,9 @@ def restrict_command(
         @wraps(func)
         async def wrapper(self: "core.Bot", ctx: commands.Context, *args, **kwargs):
             channel_is_live = self.is_live(ctx.channel.name)
-            print(channel_is_live)
             if live_only and not channel_is_live:
+                return
+            elif ctx.author is None:
                 return
             elif 'Broadcaster' in allowed and ctx.author.is_broadcaster:
                 is_allowed = True

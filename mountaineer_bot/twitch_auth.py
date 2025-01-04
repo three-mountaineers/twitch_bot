@@ -21,6 +21,7 @@ TWITCH_SCOPES = {
     'send_whisper':'whispers:edit',
     'moderate_channel':'channel:moderate',
     'read_redemption':'channel:read:redemptions',
+    'read_goals': 'channel:read:goals',
 }
 
 def get_scopes_file(config_path):
@@ -30,7 +31,7 @@ def get_scopes_file(config_path):
 def check_granted_scopes(config_path):
     scopes_path = get_scopes_file(config_path)
     scope_config = configparser.ConfigParser()
-    configs = windows_auth.read_config(config_path)
+    configs = windows_auth.read_config(config_path, 'TWITCH_BOT')
     scope_config.read(scopes_path)
     if configs['CLIENT_ID'] in scope_config:
         config_all = {k:v for k,v in scope_config[configs['CLIENT_ID']].items()}
@@ -44,7 +45,7 @@ def save_granted_scopes(config_path, scopes:List[str]):
     scopes = list(set(scopes))
     scopes_path = get_scopes_file(config_path)
     scope_config = configparser.ConfigParser()
-    configs = windows_auth.read_config(config_path)
+    configs = windows_auth.read_config(config_path, 'TWITCH_BOT')
     scope_config.read(scopes_path)
     if configs['CLIENT_ID'] not in scope_config:
         scope_config.add_section(configs['CLIENT_ID'])
@@ -68,7 +69,7 @@ def parse_scopes_to_url(scopes):
     return url_scopes
 
 def main(config, scopes=['read_chat']) -> Flask:
-    configs = windows_auth.get_password(windows_auth.read_config(config))
+    configs = windows_auth.get_password(windows_auth.read_config(config, 'TWITCH_BOT'))
     app = Flask(__name__)
     granted_scopes = check_granted_scopes(config)
     scopes = get_scopes(scopes)
@@ -121,7 +122,7 @@ def main(config, scopes=['read_chat']) -> Flask:
     return
 
 def refresh_access_token(config_str):
-    config = windows_auth.get_password(windows_auth.read_config(config_str))
+    config = windows_auth.get_password(windows_auth.read_config(config_str, 'TWITCH_BOT'))
     refresh_token = windows_auth.get_refresh_token(config, config['CLIENT_ID'])
     redirect_uri = LOCAL_URL.format(port=config['PORT'])
     headers = {

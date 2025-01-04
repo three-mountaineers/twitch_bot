@@ -11,17 +11,21 @@ from mountaineer_bot import BotMixin
 from mountaineer_bot.security import restrict_command
 
 class LevelAdderMixin(BotMixin):
-    _required_scope = [
-        'chat:read',
-        'chat:edit',
-    ]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
-        self._queue: Dict[str, Dict[str, Union[None, Dict[str, str], List[Dict[str, str]]]]] = {channel:[] for channel in self._config['CHANNELS']}
-        self._queue_status: Dict[str, bool] = {channel:False for channel in self._config['CHANNELS']}
-        self._level_code_pattern = self._config['LEVEL_CODE_PATTERN']
-        self._level_history_file = os.path.join(self._config_dir, 'level_history.json')
+        self._required_scope = [
+            'chat:read',
+            'chat:edit',
+        ]
+        self._queue: Dict[str, Dict[str, Union[None, Dict[str, str], List[Dict[str, str]]]]] = {channel:[] for channel in self._channels}
+        self._queue_status: Dict[str, bool] = {channel:False for channel in self._channels}
+        if 'LEVEL_ADDER' not in self._config:
+            self._config['LEVEL_ADDER'] = {}
+        if 'LEVEL_CODE_PATTERN' not in self._config['LEVEL_ADDER']:
+            self._config['LEVEL_ADDER']['LEVEL_CODE_PATTERN'] = input('Enter level pattern to limit > ')
+        self.save_config()
+        self._level_code_pattern = self._config['LEVEL_ADDER']['LEVEL_CODE_PATTERN']
+        self._level_history_file = os.path.join(self._appdir.user_config_dir, 'level_history.json')
         self._queue_not_open_message = 'The queue is not open.'
         if not os.path.isfile(self._level_history_file):
             with open(self._level_history_file,'w') as f:
@@ -32,7 +36,7 @@ class LevelAdderMixin(BotMixin):
                             'current':None, 
                             'complete':{},
                             }
-                        for x in self._config['CHANNELS']}
+                        for x in self._channels}
                     , f)
         with open(self._level_history_file,'r') as f:
             memory = json.load(f)

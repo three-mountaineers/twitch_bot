@@ -16,13 +16,14 @@ class TextCommand(BotMixin):
     ]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._text_command_file = os.path.join(self._config_dir, 'text_command_cache.json')
+        
+        self._text_command_file = os.path.join(self._appdir.user_config_dir, 'text_command_cache.json')
         if not os.path.isfile(self._text_command_file):
             with open(self._text_command_file,'w') as f:
                 json.dump({}, f)
         with open(self._text_command_file,'r') as f:
             self._text_command_cache = json.load(f)
-            for channel in self._config['CHANNELS']:
+            for channel in self._channels:
                 if channel not in self._text_command_cache.keys():
                     self._text_command_cache[channel] = {}
 
@@ -84,16 +85,14 @@ class TextCommand(BotMixin):
             self.save()
             return text
 
-    @restrict_message(default=True)
+    @restrict_message(default=True, live_only=False)
     async def event_message(self, message: Message):
         await super().event_message(message=message)
         channel = message.channel
-        if message.content[0] == '!':
+        if message.content[0] == self._prefix:
             args = message.content.split(' ')
             counter_key = args[0][1:]
             if counter_key in dir(self):
-                return
-            if not self.is_live(message.channel.name):
                 return
             if not self.has_count(channel.name, counter_key):
                 return
