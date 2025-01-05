@@ -33,7 +33,7 @@ class SoundReactor(BotMixin):
         self._sound_queue_routine: None | asyncio.Task = None
         self._idx = 0
         self.load_config()
-        self.setup_websocket()
+        self.setup_websocket() 
 
     def setup_websocket(self):
         pass
