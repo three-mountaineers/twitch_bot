@@ -1,4 +1,4 @@
-from typing import Literal, Any, Type, Callable, Awaitable
+from typing import Literal, Any, Type, Callable, Awaitable, TYPE_CHECKING
 
 import json
 import requests
@@ -8,12 +8,11 @@ import appdirs
 
 from typing import TypedDict
 
-from appdirs import AppDirs
-import rel
 import asyncio
 
 import mountaineer_bot as mtb
-from mountaineer_bot.core import Bot
+if TYPE_CHECKING:
+    from mountaineer_bot.core import Bot
 from mountaineer_bot.tw_events.scopes import REQUIRED_SCOPE
 from mountaineer_bot import windows_auth, api, api
 from mountaineer_bot.twitchauth import core as twitch_auth, device_flow
@@ -51,40 +50,40 @@ for scope in REQUIRED_SCOPE.keys():
 class TwitchWebSocket:
     def __init__(
         self, 
-        profile: str,
+        profile: None | str,
         bot: BotEventMixin,
         *args,
         **kwargs,
     ):
-        appdir = appdirs.AppDirs(
-            appname=profile,
-            appauthor=mtb._cfg_loc,
-            roaming=True,
-        )
-        self.config = windows_auth.read_config(os.path.join(appdir.user_config_dir, 'env.cfg'), key=None)
-        windows_auth.get_password(self.config['TWITCH_BOT'])
-        self.subscriptions: list[Subscription] = []
-        self.subscribed_events: dict[
-            str, 
-            Callable
-        ] = []
-        self.get_user_info()
-        super().__init__(*args, **kwargs)
-        self.granted_scopes = twitch_auth.refresh_token(self.config['TWITCH_BOT'])
-        self._transport = {}
-        self.session_id = None
         self.bot = bot
-        bot.tws = self
-        self.add_scopes()
+        self.subscriptions: list[Subscription] = []
+        self.profile = profile
+        if self.profile is not None:
+            appdir = appdirs.AppDirs(
+                appname=profile,
+                appauthor=mtb._cfg_loc,
+                roaming=True,
+            )
+            self.config = windows_auth.read_config(os.path.join(appdir.user_config_dir, 'env.cfg'), key=None)
+            windows_auth.get_password(self.config['TWITCH_BOT'])
+            self.get_user_info()
+            super().__init__(*args, **kwargs)
+            self.granted_scopes = twitch_auth.refresh_token(self.config['TWITCH_BOT'])
+            self._transport = {}
+            self.session_id = ''
 
     async def start(self, reconnect: bool=True):
-        while True:
+        self.add_scopes()
+        while True and self.profile is not None:
             async with websockets.connect(
                 'wss://eventsub.wss.twitch.tv/ws',
             ) as websocket:
+                message = await websocket.recv()
+                await self.on_message(message)
+                for subscription in self.subscriptions:
+                    self.subscribe_to_event(subscription=subscription)
                 while True:
                     try:
-                        websocket.state
                         message = await websocket.recv()
                         await self.on_message(message)
                     except websockets.ConnectionClosed as e:
@@ -119,7 +118,7 @@ class TwitchWebSocket:
             self.session_welcome(message_dict)
         else:
             if hasattr(self.bot, message_switch):
-                getattr(self.bot, message_switch)(message_dict)
+                getattr(self.bot, message_switch)(message_dict['payload']['event'])
             else:
                 logging.debug(f"Message [{message_switch}]: {message}")
 
@@ -161,9 +160,9 @@ class TwitchWebSocket:
         )
         
         if r.status_code >= 400:
-            logging.error(f'subscribing to {subscription['event']} failed: {r.content}')
+            logging.error(f"subscribing to {subscription['event']} failed: {r.content}")
         else:
-            logging.info(f'subscribed to {subscription['event']} response [{r.status_code}]')
+            logging.info(f"subscribed to {subscription['event']} response [{r.status_code}]")
 
     def get_user_info(self):
         logging.debug('getting user info')

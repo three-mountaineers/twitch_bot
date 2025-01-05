@@ -1,6 +1,7 @@
 import configparser
 from typing import Optional, overload, Any
 import platform
+import appdirs
 import os
 if platform.system() == 'Windows':
     import keyring
@@ -30,12 +31,31 @@ elif platform.system() == 'Linux':
                 cfg.write(f)
     keyring = Keyring()
 
+import mountaineer_bot as mtb
+
 def split_delimit_string(text: str) -> str | list[str]:
     output = [x for x in text.split('\n') if x!= '']
     if len(output) > 1:
         return output
     else:
         return output[0]
+
+@overload
+def read_profile_config(profile: str, key: None = None) -> dict[str, dict[str, Any]]:
+    ...
+
+@overload
+def read_profile_config(profile: str, key: str) -> dict[str, Any]:
+    ...
+
+def read_profile_config(profile: str, key: Optional[str] = None):
+    appdir = appdirs.AppDirs(
+            appname=profile,
+            appauthor=mtb._cfg_loc,
+            roaming=True,
+        )
+    cfg_location = os.path.join(appdir.user_config_dir, 'env.cfg')
+    return read_config(cfg_location, key=key)
 
 @overload
 def read_config(cfg_location: str, key: None = None) -> dict[str, dict[str, Any]]:
@@ -47,6 +67,8 @@ def read_config(cfg_location: str, key: str) -> dict[str, Any]:
 
 def read_config(cfg_location: str, key: Optional[str] = None):
     config = configparser.ConfigParser()
+    if not os.path.isfile(cfg_location):
+        raise ValueError(f'Configuration file does not exist: `{cfg_location}`')
     config.read(cfg_location)
     if key is None:
         output = {k.upper(): {kk.upper(): split_delimit_string(vv) for kk, vv in v.items() if vv != ''} for k,v in config.items()}

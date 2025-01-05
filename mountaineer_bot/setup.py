@@ -143,11 +143,11 @@ def main(pause_time: int=1, headless:bool=True):
     spinner.terminal_pause(pause_time)
     env_template['INVALID_COMMAND_RESPONSE'] = input('Please enter what the bot will say if someone uses an invalid command > ')
     spinner.terminal_pause(0)
-    print(f'What the bot will say if there\'s any invalid command: {env_template['INVALID_COMMAND_RESPONSE']}')
+    print(f"What the bot will say if there\'s any invalid command: {env_template['INVALID_COMMAND_RESPONSE']}")
     spinner.terminal_pause(pause_time)
     env_template['NO_PERMISSION_RESPONSE'] = input('Please enter what the bot will say if someone uses a command they\'re not allowed to > ')
     spinner.terminal_pause(0)
-    print(f'What the bot will say if a person tries to use a command they\'re not allowed to use: {env_template['NO_PERMISSION_RESPONSE']}')
+    print(f"What the bot will say if a person tries to use a command they\'re not allowed to use: {env_template['NO_PERMISSION_RESPONSE']}")
     spinner.terminal_pause(pause_time)
 
     print(f'Completing setup...')

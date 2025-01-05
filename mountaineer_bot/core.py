@@ -1,5 +1,5 @@
 import os
-from typing import List, NotRequired, Optional, Literal, TypedDict, TYPE_CHECKING
+from typing import List, Optional, Literal, TypedDict, TYPE_CHECKING
 import logging
 import time
 import requests
@@ -8,15 +8,13 @@ import datetime
 import tzlocal
 import pytz
 import asyncio
-import rel
 from functools import wraps
 import appdirs
 
-from twitchio.ext import commands, eventsub
+from twitchio.ext import commands
 
-if TYPE_CHECKING:
-    from mountaineer_bot.tw_events.core import TwitchWebSocket
-from mountaineer_bot import windows_auth
+from mountaineer_bot.tw_events.core import TwitchWebSocket, BotEventMixin
+from mountaineer_bot import windows_auth, utils
 from mountaineer_bot.twitchauth import core as twitch_auth_core, device_flow
 import mountaineer_bot as mtb
 
@@ -26,7 +24,7 @@ from mountaineer_bot.security import restrict_command
 class MessageItem(TypedDict):
     message: str
     priority: int
-    order: NotRequired[int]
+    order: utils.NotRequired[int]
 
 class BotMixin:
     _invalid_response: Optional[str] = None
@@ -34,6 +32,8 @@ class BotMixin:
     _appdir: appdirs.AppDirs
     _channels: list[str]
     _config_file: str
+    _is_live: dict[str, None | datetime.datetime]
+    _user: str
 
     def __init__(
             self, 
@@ -59,7 +59,7 @@ class BotMixin:
             self._message_queue = list(sorted(self._message_queue, key=lambda x: (x['priority'], x['order'])))
             message = self._message_queue.pop(0)
             if self.dryrun:
-                logging.debug(f'[{len(self._message_queue)}]: {self.ck(message['message'])}')
+                logging.info(f"[{len(self._message_queue)}]: {self.ck(message['message'])}")
             else:
                 await ctx.send(self.ck(message['message']))
             await asyncio.sleep(0.5)
@@ -100,10 +100,15 @@ class Bot(BotMixin, commands.Bot):
     def __init__(
         self,
         profile: str,
+        event_profile: None | str = None,
         dryrun: bool = True,
         headless: bool = False,
         **kwargs
     ):
+        if event_profile is None or not isinstance(self, BotEventMixin):
+            if isinstance(self, BotEventMixin):
+                raise ValueError('Bot is of subclass BotEventMixin. If Bot inherits from BotEventMixin, then an event listener profile (for the channel you\'re listening to) must be provided.')
+        self.tws = TwitchWebSocket(profile=event_profile, bot=self)
         self._appdir = appdirs.AppDirs(
             appname=profile,
             appauthor=mtb._cfg_loc,
@@ -140,7 +145,7 @@ class Bot(BotMixin, commands.Bot):
         self._bot_blacklist = to_list(configs.get('BLACK_LIST_USERS', []))
         self._repeat_preventer = '\U000e0000'
         self._last_message = '' 
-        self._is_live = False
+        self._is_live: dict[str, datetime.datetime | None] = {}
         self._dryrun = dryrun
 
     def login(self, headless: bool=False):
@@ -158,10 +163,14 @@ class Bot(BotMixin, commands.Bot):
 
     async def start(self):
         logging.info('Running in channels: {}'.format(', '.join(self._channels)))
+        if self.tws is not None:
+            asyncio.create_task(self.tws.start())
         await super().start()
 
     def run(self):
         logging.info('Running in channels: {}'.format(', '.join(self._channels)))
+        if self.tws is not None:
+            asyncio.create_task(self.tws.start())
         super().run()
 
     def is_live(self, channel):
@@ -238,28 +247,3 @@ class Bot(BotMixin, commands.Bot):
     async def whitelist(self, ctx: commands.Context):
         whitelist = ', '.join(self._bot_whitelist)
         await self.send(ctx, f"Very nice chatters:  {whitelist}")
-
-    @commands.command()
-    async def uptime(self, ctx: commands.Context):
-        headers = {
-            'Client-ID': self._config['CLIENT_ID'],
-            'Authorization': 'Bearer {}'.format(
-                windows_auth.get_access_token(
-                    self._config, 
-                    self._config['CLIENT_ID']
-                    )
-                ),
-        }
-        contents = requests.get(
-            f'https://api.twitch.tv/helix/streams?user_login={ctx.channel.name}',
-            headers=headers,
-        ).content
-        contents_dict = json.loads(contents)
-        if len(contents_dict['data']) > 0:
-            now = datetime.datetime.now(tzlocal.get_localzone()).astimezone(pytz.utc).replace(tzinfo=None, microsecond=0)
-            start_at_str = contents_dict['data'][0]['started_at']
-            start_at = datetime.datetime.strptime(start_at_str,'%Y-%m-%dT%H:%M:%SZ')
-            live_time = now - start_at
-            await self.send(ctx, f"{ctx.channel.name} has been live for {live_time}")
-        else:
-            await self.send(ctx, f"{ctx.channel.name} is not live")

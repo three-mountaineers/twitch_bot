@@ -1,13 +1,9 @@
 from mountaineer_bot import main, core
-from mountaineer_bot.components import SoundReactor, TextCommand
-from mountaineer_bot.tw_events import TwitchWebSocket, PredictionMixin, StreamStatusMixin
+from mountaineer_bot.components import StreamLiveEventListener
 
 
-class CustomBot(SoundReactor, core.Bot):
-    pass
-
-class CustomListener(TwitchWebSocket, StreamStatusMixin):
+class CustomBot(StreamLiveEventListener, core.Bot):
     pass
 
 if __name__ == "__main__":
-    main.main_instantiator(CustomBot, TwitchWebSocket)
+    main.main_instantiator(CustomBot)

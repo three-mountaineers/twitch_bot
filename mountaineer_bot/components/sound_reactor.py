@@ -1,4 +1,4 @@
-from typing import Optional, Dict, TypedDict, NotRequired
+from typing import Optional, Dict, TypedDict
 import logging
 import os
 import time
@@ -11,13 +11,13 @@ from playsound import playsound
 from twitchio.ext import commands, routines
 from twitchio.message import Message
 
-from mountaineer_bot import BotMixin
+from mountaineer_bot import BotMixin, utils
 from mountaineer_bot.security import restrict_command
 
 class SoundItem(TypedDict):
     sound_file: str
     priority: int
-    order: NotRequired[int]
+    order: utils.NotRequired[int]
 
 class SoundReactor(BotMixin):
     def __init__(self, *args, **kwargs):

@@ -1,5 +1,5 @@
 from mountaineer_bot import main, core
-from mountaineer_bot.components import SoundReactor, TextCommand
+from mountaineer_bot.components import SoundReactor, TextCommand, FirstIdentifier
 
 class CustomBot(SoundReactor, core.Bot):
     pass
