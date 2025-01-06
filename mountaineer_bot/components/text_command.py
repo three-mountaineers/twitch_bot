@@ -112,9 +112,7 @@ class TextCommand(BotMixin):
         args = self.parse_content(ctx.message.content)
         print(len(args))
         if len(args) < 3:
-            print('send')
             await self.send(ctx, "Can't add counter, need the new count command and message as arguments")
-            print('sent')
         else:
             key = args[1]
             text = ' '.join(args[2:])

@@ -6,8 +6,8 @@ import sys
 from appdirs import AppDirs
 
 import mountaineer_bot as mtb
-from mountaineer_bot import windows_auth, twitch_auth
-from mountaineer_bot.twitchauth import device_flow
+from mountaineer_bot import windows_auth
+from mountaineer_bot.twitch_auth import device_flow, core as twitch_auth_core
 
 class SpinningCursor:
     def spinning_cursor(self):
@@ -53,7 +53,7 @@ def main(pause_time: int=1, headless:bool=True):
         print("Existing profile kept. Attempting to authenticate.")
         device_flow.initial_authenticate(
             os.path.join(appdir.user_config_dir, 'env.cfg'),
-            scopes=[twitch_auth.TWITCH_SCOPES['read_chat']],
+            scopes=[twitch_auth_core.TWITCH_SCOPES['read_chat']],
             headless=headless,
         )
         print('Setup complete. Exiting...')
@@ -119,7 +119,7 @@ def main(pause_time: int=1, headless:bool=True):
     spinner.terminal_pause(pause_time)
     env_template['BOT_NICK'] = device_flow.initial_authenticate(
         config=env_template,
-        scopes=[twitch_auth.TWITCH_SCOPES['read_chat']],
+        scopes=[twitch_auth_core.TWITCH_SCOPES['read_chat']],
         headless=headless,
     )
     spinner.terminal_pause(pause_time)

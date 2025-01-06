@@ -7,9 +7,9 @@ from mountaineer_bot.entry_point import main
 
 class FirstAdderMixin(BotMixin):
     def __init__(self, *args, **kwargs):
+        self.add_required_scope(['chat:read','chat:edit'])
         super().__init__(*args, **kwargs)
         self.sent = False
-        self._required_scope = ['chat:read','chat:edit']
 
     @commands.command()
     async def open(self, ctx: commands.Context):

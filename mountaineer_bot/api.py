@@ -3,9 +3,10 @@ import logging
 import json
 import datetime
 import tzlocal
+import warnings
 
-from mountaineer_bot import windows_auth, twitch_auth
-from mountaineer_bot.twitchauth import core
+from mountaineer_bot import windows_auth
+from mountaineer_bot.twitch_auth import core, device_flow
 
 tz = tzlocal.get_localzone()
 
@@ -51,3 +52,37 @@ def get_user_live(cfg_dict, username: str):
         return datetime.datetime.strptime(contents_dict['data'][0]['started_at'],'%Y-%m-%dT%H:%M:%SZ') + tz.utcoffset(datetime.datetime.now())
     else:
         return None
+    
+def get_redeem_list(cfg_dict, username: str):
+    granted_scopes = core.get_scope(cfg_dict)
+    if 'channel:read:redemptions' not in granted_scopes:
+        device_flow.initial_authenticate(
+            cfg_dict, 
+            scopes=granted_scopes + ['channel:read:redemptions'],
+        )
+    user_id = get_user_id(cfg_dict=cfg_dict, username=username)
+    headers = {
+        'Client-ID': cfg_dict['CLIENT_ID'],
+        'Authorization': 'Bearer {}'.format(
+            windows_auth.get_access_token(
+                cfg_dict, 
+                cfg_dict['CLIENT_ID']
+                )
+            ),
+    }
+    r = requests.get(
+        f'https://api.twitch.tv/helix/channel_points/custom_rewards?broadcaster_id={user_id}',
+        headers=headers,
+    )
+    contents_dict = json.loads(r.content)
+    if r.status_code > 200 and r.status_code < 300:
+        output = {
+            x['id']: x['title']
+            for x in contents_dict['data']
+        }
+    elif 'The broadcaster must have partner or affiliate status.' == contents_dict['message']:
+        print('WARNING: No redemptions available. ' + contents_dict['message'])
+        return {}
+    else:
+        raise RuntimeError(f'Get_redeem_list API call failed: {r.content}')
+    return output

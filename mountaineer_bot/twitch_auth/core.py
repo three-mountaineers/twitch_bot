@@ -4,7 +4,17 @@ import logging
 
 from mountaineer_bot import windows_auth
 
-def refresh_token(config):
+TWITCH_SCOPES = {
+    'read_chat':'chat:read',
+    'send_chat':'chat:edit',
+    'read_whisper':'whispers:read',
+    'send_whisper':'whispers:edit',
+    'moderate_channel':'channel:moderate',
+    'read_redemption':'channel:read:redemptions',
+    'read_goals': 'channel:read:goals',
+}
+
+def get_scope(config):
     refresh_token = windows_auth.get_refresh_token(config, config['CLIENT_ID'])
     if refresh_token is None:
         return None
@@ -27,3 +37,6 @@ def refresh_token(config):
     windows_auth.set_refresh_token(config, config['CLIENT_ID'], result['refresh_token'])
     windows_auth.set_access_token(config, config['CLIENT_ID'], result['access_token'])
     return result['scope']
+
+def refresh_token(config):
+    get_scope(config)

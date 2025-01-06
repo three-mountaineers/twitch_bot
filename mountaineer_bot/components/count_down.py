@@ -12,6 +12,10 @@ from mountaineer_bot.utils import to_float
 
 class CountdownMixin(BotMixin):
     def __init__(self: "CountdownMixin", *args, **kwargs):
+        self.add_required_scope([
+            'chat:read',
+            'chat:edit',
+        ])
         super().__init__(*args, **kwargs)
         self._cd: Dict[str, Dict[str, Optional[routines.Routine]]] = {channel:{} for channel in self._channels}
         if 'COUNTDOWN' not in self._config:
@@ -20,10 +24,7 @@ class CountdownMixin(BotMixin):
             self._config['COUNTDOWN']['COUNTDOWN_GO_TEXT'] = input('Enter text to display when countdown hits zero > ')
         self.save_config()
         self._countdown_go_text = self._config['COUNTDOWN']['COUNTDOWN_GO_TEXT']
-        self._required_scope += [
-            'chat:read',
-            'chat:edit',
-        ]
+        
 
     @commands.command()
     @restrict_command(['Mods', 'Broadcaster', 'Whitelist'], live_only=True)

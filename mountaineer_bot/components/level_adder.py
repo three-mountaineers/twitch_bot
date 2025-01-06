@@ -12,11 +12,11 @@ from mountaineer_bot.security import restrict_command
 
 class LevelAdderMixin(BotMixin):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._required_scope = [
+        self.add_required_scope([
             'chat:read',
             'chat:edit',
-        ]
+        ])
+        super().__init__(*args, **kwargs)
         self._queue: Dict[str, Dict[str, Union[None, Dict[str, str], List[Dict[str, str]]]]] = {channel:[] for channel in self._channels}
         self._queue_status: Dict[str, bool] = {channel:False for channel in self._channels}
         if 'LEVEL_ADDER' not in self._config:

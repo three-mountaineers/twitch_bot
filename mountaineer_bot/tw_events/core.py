@@ -1,21 +1,19 @@
-from typing import Literal, Any, Type, Callable, Awaitable, TYPE_CHECKING
-
+from typing import Literal, Any, Type, Callable, Awaitable, TYPE_CHECKING, Protocol, TypedDict
 import json
 import requests
 import os
 import logging
 import appdirs
-
-from typing import TypedDict
-
+import websockets
 import asyncio
 
 import mountaineer_bot as mtb
 if TYPE_CHECKING:
-    from mountaineer_bot.core import Bot
+    from mountaineer_bot.mixins import BotEventMixin
+    from mountaineer_bot.core import BotEventListener
 from mountaineer_bot.tw_events.scopes import REQUIRED_SCOPE
 from mountaineer_bot import windows_auth, api, api
-from mountaineer_bot.twitchauth import core as twitch_auth, device_flow
+from mountaineer_bot.twitch_auth import core as twitch_auth, device_flow
 import mountaineer_bot as mbt
 
 class Subscription(TypedDict):
@@ -23,35 +21,11 @@ class Subscription(TypedDict):
     version: int
     condition: dict
 
-class ListenerMixin:
-    _cfg = ''
-    user_id = 0
-    def __init__(self, *args, **kwargs):
-        self.configs = os.path.join(self._config_dir, 'events_config.yml')
-
-    def add_subscriptions(self, subscriptions: list[Subscription]):
-        if not hasattr(self, 'subscriptions'):
-            self.subscriptions: list[Subscription] = subscriptions
-        else:
-            self.subscriptions += subscriptions
-
-import websockets
-
-class BotEventMixin:
-    tws: "TwitchWebSocket"
-    pass
-
-def pass_message(cls,  message_dict):
-    pass
-
-for scope in REQUIRED_SCOPE.keys():
-    setattr(BotEventMixin, scope.replace('.','_'), pass_message)
-
 class TwitchWebSocket:
     def __init__(
         self, 
         profile: None | str,
-        bot: BotEventMixin,
+        bot: "BotEventListener",
         *args,
         **kwargs,
     ):
@@ -68,7 +42,7 @@ class TwitchWebSocket:
             windows_auth.get_password(self.config['TWITCH_BOT'])
             self.get_user_info()
             super().__init__(*args, **kwargs)
-            self.granted_scopes = twitch_auth.refresh_token(self.config['TWITCH_BOT'])
+            self.granted_scopes = twitch_auth.get_scope(self.config['TWITCH_BOT'])
             self._transport = {}
             self.session_id = ''
 
@@ -104,6 +78,7 @@ class TwitchWebSocket:
             if y is not None
         ]))
         if any([x for x in scopes if x not in self.granted_scopes]):
+            logging.info(f"Logging into account: {self.config['TWITCH_BOT']['BOT_NICK']}")
             device_flow.initial_authenticate(
                 self.config['TWITCH_BOT'],
                 scopes=list(set(self.granted_scopes + scopes)),

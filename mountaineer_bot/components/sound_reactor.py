@@ -21,14 +21,14 @@ class SoundItem(TypedDict):
 
 class SoundReactor(BotMixin):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._required_scope = [
+        self.add_required_scope([
             'chat:read',
-        ]
+        ])
+        super().__init__(*args, **kwargs)
         self._sound_reactor_config_file = os.path.join(self._appdir.user_config_dir, 'sound_reactor_config.yml')
         if not os.path.isfile(self._sound_reactor_config_file):
             with open(self._sound_reactor_config_file,'w') as f:
-                yaml.dump({'command': {}, 'pattern': {}}, f)
+                yaml.dump({'command': {}, 'pattern': {}, 'redeem': {}}, f)
         self._sound_queue: list[SoundItem] = []
         self._sound_queue_routine: None | asyncio.Task = None
         self._idx = 0
@@ -93,6 +93,10 @@ class SoundReactor(BotMixin):
         self.load_config()
         await self.send(ctx=ctx, message=self.sound_reactor_config.get('refreshed_text'))
 
-    @restrict_command(default=True, live_only=True)
-    def redemption(self, message: Message):
-        pass
+    def channel_channel_points_automatic_reward_redemption_add(self, message_dict):
+        super().channel_channel_points_automatic_reward_redemption_add(message_dict)
+        if message_dict['reward']['id'] in self.sound_reactor_config['redeem']:
+            self.add_sound({
+                'sound_file': self.sound_reactor_config['redeem'][message_dict['reward']['id']],
+                'priority': 0,
+            })

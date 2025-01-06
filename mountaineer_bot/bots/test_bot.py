@@ -1,8 +1,7 @@
 from mountaineer_bot import main, core
-from mountaineer_bot.components import StreamLiveEventListener
+from mountaineer_bot.components import FirstIdentifier, StreamLiveEventListener
 
-
-class CustomBot(StreamLiveEventListener, core.Bot):
+class CustomBot(FirstIdentifier, StreamLiveEventListener, core.BotEventListener):
     pass
 
 if __name__ == "__main__":

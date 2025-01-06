@@ -13,8 +13,11 @@ times = [
     (365, 'days'),
 ]
 
-class StreamLiveEventListener(BotMixin, BotEventMixin):
+class StreamLiveEventListener(BotEventMixin):
     def __init__(self, *args, **kwargs):
+        self.add_required_scope([
+            'chat:edit',
+        ])
         super().__init__(*args, **kwargs)
         self.tws.subscriptions += [
             {
@@ -50,7 +53,7 @@ class StreamLiveEventListener(BotMixin, BotEventMixin):
         super().stream_offline(message_dict)
 
     @commands.command()
-    async def uptime(self, ctx: commands.Command):
+    async def uptime(self, ctx: commands.Context):
         if ctx.channel.name not in self._is_live:
             return
         time = self._is_live[ctx.channel.name]
