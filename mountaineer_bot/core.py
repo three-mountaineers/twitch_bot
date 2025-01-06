@@ -153,11 +153,11 @@ class Bot(commands.Bot):
         self._required_scope = list(set(self.required_scope + scopes))
 
     async def start(self):
-        logging.info('Running in channels: {}'.format(', '.join(self._channels)))
+        logging.info('Running bot in channels: {}'.format(', '.join(self._channels)))
         await super().start()
 
     def run(self):
-        logging.info('Running in channels: {}'.format(', '.join(self._channels)))
+        logging.info('Running bot in channels: {}'.format(', '.join(self._channels)))
         super().run()
 
     def is_live(self, channel):

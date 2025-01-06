@@ -56,6 +56,7 @@ class TwitchWebSocket:
                 await self.on_message(message)
                 for subscription in self.subscriptions:
                     self.subscribe_to_event(subscription=subscription)
+                logging.info(f"Event monitoring running with account: `{self.config['TWITCH_BOT']['BOT_NICK']}`")
                 while True:
                     try:
                         message = await websocket.recv()
