@@ -1,4 +1,6 @@
-from typing import TypedDict, NotRequired, Optional, Literal
+from typing import TypedDict, Optional, Literal
+
+from mountaineer_bot import utils
 
 EmotesV1 = TypedDict(
     'Emotes', 
@@ -12,15 +14,15 @@ EmotesV1 = TypedDict(
 class EmotesV2(TypedDict):
     id: str
     emote_set_id: str
-    owner_id: NotRequired[str]
-    format: NotRequired[list[str]]
+    owner_id: utils.NotRequired[str]
+    format: utils.NotRequired[list[str]]
 
 class CheerMotes(TypedDict):
-    text: NotRequired[str]
-    amount: NotRequired[int]
+    text: utils.NotRequired[str]
+    amount: utils.NotRequired[int]
     prefix: str
     tier: int
-    bits: NotRequired[int]
+    bits: utils.NotRequired[int]
 
 class FragmentsV1(TypedDict):
     emotes: list[EmotesV1]
@@ -70,7 +72,7 @@ class ChatterUserDetails(TypedDict):
 class Message(TypedDict):
     text: str
     fragments: list[FragmentsV2]
-    mention: NotRequired[Optional[UserDetails]]
+    mention: utils.NotRequired[Optional[UserDetails]]
 
 class Badge(TypedDict):
     set_id: str

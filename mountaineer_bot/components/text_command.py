@@ -1,4 +1,4 @@
-from typing import Optional, Dict, TypedDict,  NotRequired, Literal
+from typing import Optional, Dict, TypedDict, Literal
 import os
 import logging
 import json
@@ -8,15 +8,15 @@ import random
 from twitchio.ext import commands, routines
 from twitchio.message import Message
 
-from mountaineer_bot import BotMixin, BotEventMixin, api
+from mountaineer_bot import BotMixin, BotEventMixin, api, utils
 from mountaineer_bot.tw_events.types import StreamOffline, StreamOnline, GoalBegin, GoalEnd
 from mountaineer_bot.security import restrict_command, restrict_message
 
 class Commands(TypedDict):
-    count: NotRequired[int]
+    count: utils.NotRequired[int]
     type: Literal['counter','command']
     text: str
-    repeat: NotRequired[Optional[float]]
+    repeat: utils.NotRequired[Optional[float]]
 
 class TextCommand(BotMixin):
     _required_scope = [

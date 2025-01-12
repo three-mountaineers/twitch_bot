@@ -1,4 +1,4 @@
-from typing import TypedDict, Optional, Literal, NotRequired
+from typing import TypedDict, Optional, Literal
 
 from mountaineer_bot.tw_events.types import base_messages as bm
 
