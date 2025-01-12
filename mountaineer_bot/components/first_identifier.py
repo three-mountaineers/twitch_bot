@@ -125,7 +125,7 @@ class FirstIdentifier(StreamLiveEventListener):
         await self.recognise_first_chatter(message)
 
     async def recognise_first_chatter(self, message: Message):
-        await message.channel.send(self._config['FIRST_IDENTIFIER']['TEXT'].format(chatter=message.author.name))
+        await self.send(message.channel.name, self._config['FIRST_IDENTIFIER']['TEXT'].format(chatter=message.author.name))
         if message.author.name not in self._first_identifier_history[message.channel.name]['score']:
             self._first_identifier_history[message.channel.name]['score'][message.author.name] = 1
         else:
@@ -133,8 +133,8 @@ class FirstIdentifier(StreamLiveEventListener):
         self._first_identifier_history[message.channel.name]
         self._first_identifier_history[message.channel.name]['last_redeem'] = datetime.datetime.now()
         self.save_first_history()
-        await message.channel.send(self.user_first_score(message.channel.name, message.author.name))
-        await message.channel.send(self.get_score_board(message.channel.name))
+        await self.send(message.channel.name, self.user_first_score(message.channel.name, message.author.name))
+        await self.send(message.channel.name, self.get_score_board(message.channel.name))
 
     def channel_channel_points_automatic_reward_redemption_add(self, message_dict):
         super().channel_channel_points_automatic_reward_redemption_add(message_dict)
@@ -142,23 +142,18 @@ class FirstIdentifier(StreamLiveEventListener):
             asyncio.create_task(self.recognise_first_chatter(message_dict))
 
     async def recognise_first_redeemer(self, message_dict):
-        target_channel = message_dict['broadcaster_user_name']
+        channel = message_dict['broadcaster_user_name']
         redeemer = message_dict['user_name']
-        channels = [x for x in self.connected_channels if x.name == target_channel]
-        if len(channels) == 0:
-            return
+        await self.send(channel, self._config['FIRST_IDENTIFIER']['TEXT'].format(chatter=redeemer))
+        if redeemer not in self._first_identifier_history[channel]['score']:
+            self._first_identifier_history[channel]['score'][redeemer] = 1
         else:
-            channel = channels[0]
-        await channel.send(self._config['FIRST_IDENTIFIER']['TEXT'].format(chatter=redeemer))
-        if redeemer not in self._first_identifier_history[channel.name]['score']:
-            self._first_identifier_history[channel.name]['score'][redeemer] = 1
-        else:
-            self._first_identifier_history[channel.name]['score'][redeemer] += 1
-        self._first_identifier_history[channel.name]
-        self._first_identifier_history[channel.name]['last_redeem'] = datetime.datetime.now()
+            self._first_identifier_history[channel]['score'][redeemer] += 1
+        self._first_identifier_history[channel]
+        self._first_identifier_history[channel]['last_redeem'] = datetime.datetime.now()
         self.save_first_history()
-        await channel.send(self.user_first_score(channel.name, redeemer))
-        await channel.send(self.get_score_board(channel.name))
+        await self.send(channel, self.user_first_score(channel, redeemer))
+        await self.send(channel, self.get_score_board(channel))
 
     def get_score_board(self, channel: str):
         score = self._first_identifier_history[channel]['score']
@@ -174,7 +169,7 @@ class FirstIdentifier(StreamLiveEventListener):
 
     @commands.command()
     async def first_me(self, ctx: commands.Context):
-        await self.send(ctx, self.user_first_score(ctx.channel.name, ctx.author.name))
+        await self.send(ctx.channel.name, self.user_first_score(ctx.channel.name, ctx.author.name))
 
     def user_first_score(self, channel: str, user: str):
         score = self._first_identifier_history[channel]['score']
@@ -189,4 +184,4 @@ class FirstIdentifier(StreamLiveEventListener):
 
     @commands.command()
     async def first(self, ctx: commands.Context):
-        await self.send(ctx, self.get_score_board(ctx.channel.name))
+        await self.send(ctx.channel.name, self.get_score_board(ctx.channel.name))

@@ -1,7 +1,7 @@
 from mountaineer_bot import main, core
-from mountaineer_bot.components import CountdownMixin, LevelAdderMixin, SchedulerMixin, TextCommand, FirstIdentifier
+from mountaineer_bot.components import CountdownMixin, LevelAdderMixin, TextCommandRepeat, FirstIdentifier
 
-class CustomBot(FirstIdentifier, TextCommand, CountdownMixin, LevelAdderMixin, SchedulerMixin):
+class CustomBot(FirstIdentifier, TextCommandRepeat, CountdownMixin, LevelAdderMixin):
     pass
 
 if __name__ == "__main__":

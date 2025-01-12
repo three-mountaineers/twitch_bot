@@ -40,21 +40,21 @@ class CountdownMixin(BotMixin):
                 key = content[2]
             if content[1].lower() in ['stop','wait']:
                 message = self.stop_countdown(channel, key=key)
-                await self.send(ctx, message, priority=0)
+                await self.send(ctx.channel.name, message, priority=0)
             else:
-                await self.send(ctx, self._invalid_response)
+                await self.send(ctx.channel.name, self._invalid_response)
         elif dt <= 0:
-            await self.send(ctx, self._invalid_response)
+            await self.send(ctx.channel.name, self._invalid_response)
         else:
             if len(content) == 2:
                 key = None
             else:
                 key = content[2]
             if self.has_cd(channel, key):
-                await self.send(ctx, "I'm already counting down!")
+                await self.send(ctx.channel.name, "I'm already counting down!")
                 return
             else:
-                await self.send(ctx, 'Countdown starting...', priority=0)
+                await self.send(ctx.channel.name, 'Countdown starting...', priority=0)
             self._cd[channel]['_base' if key is None else key] = asyncio.create_task(
                 self.countdown_helper(
                     ctx, 
@@ -99,7 +99,7 @@ class CountdownMixin(BotMixin):
 
             # Print the time
             message = self.format_time_remain(int_dt, key=key)
-            await self.send(ctx, message)
+            await self.send(ctx.channel.name, message)
             logging.log(logging.DEBUG, message)
             if message == self.format_time_remain(0):
                 break

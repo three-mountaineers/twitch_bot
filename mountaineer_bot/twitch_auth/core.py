@@ -32,7 +32,7 @@ def get_scope(config):
     r = requests.post('https://id.twitch.tv/oauth2/token', headers=headers, data=data)
     result = json.loads(r.content)
     if r.status_code != 200:
-        logging.log(logging.FATAL, result)
+        logging.log(logging.FATAL, r.content)
         raise RuntimeError('Could not refresh token.')
     windows_auth.set_refresh_token(config, config['CLIENT_ID'], result['refresh_token'])
     windows_auth.set_access_token(config, config['CLIENT_ID'], result['access_token'])

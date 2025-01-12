@@ -3,5 +3,5 @@ from mountaineer_bot.components.level_adder import LevelAdderMixin
 from mountaineer_bot.components.scheduler import SchedulerMixin
 from mountaineer_bot.components.first_identifier import FirstIdentifier
 from mountaineer_bot.components.sound_reactor import SoundReactor
-from mountaineer_bot.components.text_command import TextCommand
+from mountaineer_bot.components.text_command import TextCommand, TextCommandRepeat
 from mountaineer_bot.components.stream_live import StreamLiveEventListener

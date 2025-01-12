@@ -67,7 +67,7 @@ def restrict_command(
                 is_allowed = default
             if not is_allowed:
                 if self._no_permission_response is not None and not fail_no_message:
-                    await self.send(ctx, self._no_permission_response)
+                    await self.send(ctx.channel.name, self._no_permission_response)
             else:
                 await func(self, ctx, *args, **kwargs)
         return wrapper

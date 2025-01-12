@@ -16,7 +16,7 @@ class FirstAdderMixin(BotMixin):
         channel = ctx.channel.name
         if channel in ['aurateur','three_mountaineers']:
             if not self.sent:
-                await ctx.send(self._config['OPEN_REPLY'])
+                await self.send(channel, self._config['OPEN_REPLY'])
             self.sent = True
             
     @commands.command()

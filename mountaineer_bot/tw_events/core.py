@@ -94,7 +94,15 @@ class TwitchWebSocket:
             self.session_welcome(message_dict)
         else:
             if hasattr(self.bot, message_switch):
-                getattr(self.bot, message_switch)(message_dict['payload']['event'])
+                try:
+                    getattr(self.bot, message_switch)(
+                        message=message_dict['payload']['event'],
+                        version=message_dict['payload']['subscription']['version'],
+                    )
+                except Exception as e:
+                    import traceback
+                    print(traceback.format_exc())
+                    print(message_dict)
             else:
                 logging.debug(f"Message [{message_switch}]: {message}")
 

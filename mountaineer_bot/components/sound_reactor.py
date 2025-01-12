@@ -11,7 +11,7 @@ from playsound import playsound
 from twitchio.ext import commands, routines
 from twitchio.message import Message
 
-from mountaineer_bot import BotMixin, utils
+from mountaineer_bot import BotEventMixin, utils
 from mountaineer_bot.security import restrict_command
 
 class SoundItem(TypedDict):
@@ -19,7 +19,7 @@ class SoundItem(TypedDict):
     priority: int
     order: utils.NotRequired[int]
 
-class SoundReactor(BotMixin):
+class SoundReactor(BotEventMixin):
     def __init__(self, *args, **kwargs):
         self.add_required_scope([
             'chat:read',
@@ -28,9 +28,18 @@ class SoundReactor(BotMixin):
         self._sound_reactor_config_file = os.path.join(self._appdir.user_config_dir, 'sound_reactor_config.yml')
         if not os.path.isfile(self._sound_reactor_config_file):
             with open(self._sound_reactor_config_file,'w') as f:
-                yaml.dump({'command': {}, 'pattern': {}, 'redeem': {}}, f)
+                yaml.dump({'command': {"test":"test"}, 'pattern': {"test":"test"}, 'redeem': {"test":"test"}}, f)
         self._sound_queue: list[SoundItem] = []
         self._sound_queue_routine: None | asyncio.Task = None
+        self.tws.subscriptions += [
+            {
+                'event': 'channel.channel_points_custom_reward_redemption.add',
+                'version': '1',
+                'condition': {
+                    'broadcaster_user_id': str(self.tws.user_id),
+                },
+            }
+        ]
         self._idx = 0
         self.load_config()
         self.setup_websocket() 
@@ -83,15 +92,18 @@ class SoundReactor(BotMixin):
     @restrict_command(default=True, live_only=True)
     async def sounds(self, ctx: commands.Context):
         commands = 'Sound commands: ' +  ', '.join(['!'+x for x in self.sound_reactor_config['command'].keys()])
-        await self.send(ctx=ctx, message=commands)
+        await self.send(ctx.channel.name, message=commands)
         reacts = 'Sound reacts: ' +  ', '.join([x for x in self.sound_reactor_config['pattern'].keys()])
-        await self.send(ctx=ctx, message=reacts)
+        await self.send(ctx.channel.name, message=reacts)
 
     @commands.command()
     @restrict_command(default=False, live_only=True, allowed=['Broadcaster'])
     async def sounds_refresh(self, ctx: commands.Context):
         self.load_config()
-        await self.send(ctx=ctx, message=self.sound_reactor_config.get('refreshed_text'))
+        if 'chat: edit' not in self.required_scope:
+            logging.info('SoundReactor catalog refreshed.')
+        else:
+            await self.send(ctx.channel.name, message=self.sound_reactor_config.get('refreshed_text'))
 
     def channel_channel_points_automatic_reward_redemption_add(self, message_dict):
         super().channel_channel_points_automatic_reward_redemption_add(message_dict)

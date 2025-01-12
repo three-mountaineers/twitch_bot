@@ -19,6 +19,7 @@ REQUIRED_SCOPE: dict[str, list[None | str]] = {
     'channel.charity_campaign.stop': ['channel:read:charity'],
     'channel.chat.clear': ['channel:bot'],
     'channel.chat.clear_user_messages': ['channel:bot'],
+    'channel.chat.message': ['channel:bot'],
     'channel.chat.message_delete': ['channel:bot'],
     'channel.chat.notification': ['channel:bot'],
     'channel.chat.user_message_hold': ['user:bot'],

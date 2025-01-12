@@ -1,7 +1,7 @@
 from mountaineer_bot import main, core
-from mountaineer_bot.components import FirstIdentifier
+from mountaineer_bot.components import TextCommandRepeat
 
-class CustomBot(FirstIdentifier, core.BotEventListener):
+class CustomBot(TextCommandRepeat, core.BotEventListener):
     pass
 
 if __name__ == "__main__":

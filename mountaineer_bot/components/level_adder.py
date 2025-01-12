@@ -77,14 +77,14 @@ class LevelAdderMixin(BotMixin):
     async def open(self, ctx: commands.Context):
         message = self._queue_status[ctx.channel.name] = True
         message = 'The queue is now open'
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
 
     @commands.command()
     @restrict_command()
     async def close(self, ctx: commands.Context):
         message = self._queue_status[ctx.channel.name] = False
         message = 'The queue is now closed'
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
 
     @commands.command()
     @restrict_command(default=True, live_only=True)
@@ -109,7 +109,7 @@ class LevelAdderMixin(BotMixin):
                         message = f'Your level has been added {user}'
                 else:
                     message = f'Invalid level code: level codes need to look like {self._level_code_pattern}'
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
         self.save_queue()
 
     @commands.command()
@@ -139,7 +139,7 @@ class LevelAdderMixin(BotMixin):
                         message = f'Your level has been added {user}'
                 else:
                     message = f'Invalid level code: level codes need to look like {self._level_code_pattern}'
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
         self.save_queue()
 
     async def skip(self, ctx: commands.Context):
@@ -152,7 +152,7 @@ class LevelAdderMixin(BotMixin):
         if len(content) == 1:
             content.append(None)
         message = self._select_from_queue(ctx, store=False, which=content[1])
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
         self.save_queue()
 
     @commands.command()
@@ -162,7 +162,7 @@ class LevelAdderMixin(BotMixin):
         if len(content) == 1:
             content.append(None)
         message = self._select_from_queue(ctx, store=True, which=content[1])
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
         self.save_queue()
 
     def _select_from_queue(self, ctx: commands.Context, store:bool, which=None):
@@ -211,7 +211,7 @@ class LevelAdderMixin(BotMixin):
             user = self._queue[ctx.channel.name]['current']['user']
             level_code = self._queue[ctx.channel.name]['current']['code']
             message = f'Current level is {level_code} by {user}.'
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
 
     @commands.command()
     @restrict_command(live_only=True, default=True)
@@ -222,7 +222,7 @@ class LevelAdderMixin(BotMixin):
             message = "The queue is empty and closed."
         elif len(users) == 0:
             message = "The queue is empty."
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
 
     @commands.command()
     @restrict_command(live_only=True, default=True)
@@ -243,7 +243,7 @@ class LevelAdderMixin(BotMixin):
             message = f'Your level has been removed {user}'
         else:
             message = f"{user} you don't have a level to remove."
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
         self.save_queue()
 
     @commands.command()
@@ -251,7 +251,7 @@ class LevelAdderMixin(BotMixin):
     async def clear(self, ctx: commands.Context):
         self._queue[ctx.channel.name]['queue'] = []
         self._queue[ctx.channel.name]['current'] = None
-        await self.send(ctx, 'Queue cleared')
+        await self.send(ctx.channel.name, 'Queue cleared')
         self.save_queue()
 
     @commands.command()
@@ -274,4 +274,4 @@ class LevelAdderMixin(BotMixin):
             message = self._queue_not_open_message
         else:
             message = f"{user} you don't have a level submitted."
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)

@@ -63,7 +63,7 @@ class SchedulerMixin(BotMixin):
         content = ctx.message.content.strip(self._repeat_preventer).strip().split(' ')
         if len(content) == 1:
             message = self._get_schedule(channel)
-            await self.send(ctx, message)
+            await self.send(ctx.channel.name, message)
         else:
             command = content[1]
             if command == 'add':
@@ -74,7 +74,7 @@ class SchedulerMixin(BotMixin):
                 await self._schedule_remove(ctx, content)
             else:
                 message = self._get_schedule(channel, tz_name=' '.join(content[1:]))
-                await self.send(ctx, message)
+                await self.send(ctx.channel.name, message)
 
     @restrict_command(['Broadcaster'])
     async def _schedule_add(self, ctx: commands.Context, content: List[str]):
@@ -86,14 +86,14 @@ class SchedulerMixin(BotMixin):
             content = content[:6]
             content[5] = game
             message = self._add_to_schedule(channel, *content[2:])
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
 
     async def _schedule_list(self, ctx: commands.Context):
         channel = ctx.channel.name
         last_list = self.last_list.get(channel)
         time_since_last = int(round(datetime.datetime.now() - last_list).total_seconds())
         if last_list is not None and (time_since_last <= self.LIST_COOLDOWN_SECONDS) and not ctx.author.is_broadcaster:
-            await self.send(ctx, f"I just did this. Wait a bit ({time_since_last}s) before trying again.")
+            await self.send(ctx.channel.name, f"I just did this. Wait a bit ({time_since_last}s) before trying again.")
         else:
             asyncio.create_task(
                 self._list_schedule(ctx)
@@ -107,16 +107,16 @@ class SchedulerMixin(BotMixin):
         else:
             content[2] = content[2]
             message = self._remove_schedule(channel, *content[2:])
-        await self.send(ctx, message)
+        await self.send(ctx.channel.name, message)
 
     async def _list_schedule(self, ctx: commands.Context):
         channel = ctx.channel.name
         self.last_list[channel] = datetime.datetime.now()
         if len(self._schedule[channel]) == 0:
-            await self.send(ctx, "There's nothing on the schedule!")
+            await self.send(ctx.channel.name, "There's nothing on the schedule!")
             return
         for item in self._schedule[channel]:
-            await self.send(ctx, self._format_item_str(item))
+            await self.send(ctx.channel.name, self._format_item_str(item))
         return
 
     def _get_current_schedule(self, channel, local_time: datetime.datetime):

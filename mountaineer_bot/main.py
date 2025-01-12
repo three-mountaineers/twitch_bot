@@ -8,8 +8,8 @@ import asyncio
 
 from mountaineer_bot import core
 
-async def main(Bot: Type[core.Bot], profile: str, event_profile: None | str=None, headless: bool=False, dryrun: bool = False, live_only:bool = False):
-    bot = Bot(profile=profile, event_profile=event_profile, dryrun=dryrun, headless=headless, live_only=live_only)
+async def main(Bot: Type[core.Bot], profile: str, event_profile: None | str=None, headless: bool=False, dryrun: bool = False, live_only:bool = False, respond: bool=False):
+    bot = Bot(profile=profile, event_profile=event_profile, dryrun=dryrun, headless=headless, live_only=live_only, respond=respond)
     await bot.start()
 
 def main_instantiator(Bot:  Type[core.Bot]):
@@ -19,6 +19,7 @@ def main_instantiator(Bot:  Type[core.Bot]):
     parser.add_argument('-e','--event_profile', type=str, default=None)
     parser.add_argument('-d','--headless', action='store_true')
     parser.add_argument('-l','--live_only', action='store_true')
+    parser.add_argument('-r','--respond', action='store_true')
     parser.add_argument('--dryrun', action='store_true')
     parser.add_argument('--log_level', default=20)
     args = vars(parser.parse_args())
