@@ -22,7 +22,7 @@ class SoundItem(TypedDict):
 class SoundReactor(BotEventMixin):
     def __init__(self, *args, **kwargs):
         self.add_required_scope([
-            'chat:read',
+            'chat:read','chat:edit',
         ])
         super().__init__(*args, **kwargs)
         self._sound_reactor_config_file = os.path.join(self._appdir.user_config_dir, 'sound_reactor_config.yml')
@@ -100,11 +100,8 @@ class SoundReactor(BotEventMixin):
     @restrict_command(default=False, live_only=True, allowed=['Broadcaster'])
     async def sounds_refresh(self, ctx: commands.Context):
         self.load_config()
-        if 'chat: edit' not in self.required_scope:
-            logging.info('SoundReactor catalog refreshed.')
-        else:
-            await self.send(ctx.channel.name, message=self.sound_reactor_config.get('refreshed_text'))
-
+        logging.info('SoundReactor catalog refreshed.')
+        
     def channel_channel_points_automatic_reward_redemption_add(self, message_dict):
         super().channel_channel_points_automatic_reward_redemption_add(message_dict)
         if message_dict['reward']['id'] in self.sound_reactor_config['redeem']:

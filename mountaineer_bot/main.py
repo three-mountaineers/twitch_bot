@@ -21,7 +21,7 @@ def main_instantiator(Bot:  Type[core.Bot]):
     parser.add_argument('-l','--live_only', action='store_true')
     parser.add_argument('-r','--respond', action='store_true')
     parser.add_argument('--dryrun', action='store_true')
-    parser.add_argument('--log_level', default=20)
+    parser.add_argument('--log_level', default=20, type=int)
     args = vars(parser.parse_args())
     log_level = args.pop('log_level')
     logging.getLogger().setLevel(log_level)

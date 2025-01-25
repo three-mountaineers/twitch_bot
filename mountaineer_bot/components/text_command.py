@@ -11,6 +11,7 @@ from twitchio.message import Message
 from mountaineer_bot import BotMixin, BotEventMixin, api, utils
 from mountaineer_bot.tw_events.types import StreamOffline, StreamOnline, GoalBegin, GoalEnd
 from mountaineer_bot.security import restrict_command, restrict_message
+from mountaineer_bot.components.stream_live import StreamLiveEventListener
 
 class Commands(TypedDict):
     count: utils.NotRequired[int]
@@ -26,7 +27,6 @@ class TextCommand(BotMixin):
     _text_command_cache: dict[str, dict[str, Commands]]
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
         self._text_command_file = os.path.join(self._appdir.user_config_dir, 'text_command_cache.json')
         if not os.path.isfile(self._text_command_file):
             with open(self._text_command_file,'w') as f:
@@ -36,6 +36,7 @@ class TextCommand(BotMixin):
             for channel in self._channels:
                 if channel not in self._text_command_cache.keys():
                     self._text_command_cache[channel] = {}
+        
 
     def save(self):
         with open(self._text_command_file,'w') as f:
@@ -233,7 +234,7 @@ class TextCommand(BotMixin):
         await self.send(ctx.channel.name, f'The following commands are registered: {registered}')
 
 
-class TextCommandRepeat(TextCommand, BotEventMixin):
+class TextCommandRepeat(TextCommand, StreamLiveEventListener):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._dummy_is_live = {c.name: False for c in self.connected_channels}
@@ -255,7 +256,10 @@ class TextCommandRepeat(TextCommand, BotEventMixin):
                 }
             }
             for channel in self._channels
-        ]     
+        ]
+        for broadcaster in self._channels:
+            if self.is_live(broadcaster):
+                self.start_loops(broadcaster)
 
     async def run_loop(self, channel: str, key: str):
         initial_delay = random.randint(0, 100)/100
@@ -267,9 +271,12 @@ class TextCommandRepeat(TextCommand, BotEventMixin):
             await self.send(channel, text)
             await asyncio.sleep(delay*60)
 
-    def stream_online(self, message: StreamOnline, version: str):
-        for command_name, commands in self._text_command_cache.get(message['broadcaster_user_login'], {}).items():
+    def start_loops(self, broadcaster: str):
+        for command_name, commands in self._text_command_cache.get(broadcaster, {}).items():
             if commands['repeat'] is None:
                 continue
-            asyncio.create_task(self.run_loop(message['broadcaster_user_login'], command_name))
+            asyncio.create_task(self.run_loop(broadcaster, command_name))
+
+    def stream_online(self, message: StreamOnline, version: str):
+        self.start_loops(message['broadcaster_user_login'])
         super().stream_online(message, version)

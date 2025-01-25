@@ -60,6 +60,7 @@ class TwitchWebSocket:
                 while True:
                     try:
                         message = await websocket.recv()
+                        logging.info(f"Websocket received: `{message}`")
                         await self.on_message(message)
                     except websockets.ConnectionClosed as e:
                         print(e.args[0])

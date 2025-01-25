@@ -63,7 +63,7 @@ class StreamLiveEventListener(BotEventMixin):
             uptime = (datetime.datetime.now() - time).total_seconds()
             strs = []
             for time_denom, time_str in times:
-                strs.append(str(uptime % time_denom)  + ' ' + time_str)
-                uptime = uptime // time_denom
+                strs.append(str(int(uptime % time_denom))  + ' ' + time_str)
+                uptime = int(uptime // time_denom)
             uptime_str = ' '.join(strs[::-1])
             await self.send(ctx.channel.name, message=f'{ctx.channel.name} has been live for {uptime_str}')
